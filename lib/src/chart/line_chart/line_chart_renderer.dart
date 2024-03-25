@@ -14,10 +14,12 @@ class LineChartLeaf extends LeafRenderObjectWidget {
     super.key,
     required this.data,
     required this.targetData,
+    this.useCustomTooltip = false,
   });
 
   final LineChartData data;
   final LineChartData targetData;
+  final bool useCustomTooltip;
 
   @override
   RenderLineChart createRenderObject(BuildContext context) => RenderLineChart(
@@ -25,6 +27,7 @@ class LineChartLeaf extends LeafRenderObjectWidget {
         data,
         targetData,
         MediaQuery.of(context).textScaleFactor,
+        useCustomTooltip,
       );
 
   @override
@@ -33,7 +36,8 @@ class LineChartLeaf extends LeafRenderObjectWidget {
       ..data = data
       ..targetData = targetData
       ..textScale = MediaQuery.of(context).textScaleFactor
-      ..buildContext = context;
+      ..buildContext = context
+      ..useCustomTooltip = useCustomTooltip;
   }
 }
 // coverage:ignore-end
@@ -45,13 +49,23 @@ class RenderLineChart extends RenderBaseChart<LineTouchResponse> {
     LineChartData data,
     LineChartData targetData,
     double textScale,
+    bool useCustomTooltip,
   )   : _data = data,
         _targetData = targetData,
         _textScale = textScale,
+        _useCustomTooltip = useCustomTooltip,
         super(
           targetData.lineTouchData,
           context,
         );
+
+  bool _useCustomTooltip;
+  bool get useCustomTooltip => _useCustomTooltip;
+  set useCustomTooltip(bool value) {
+    if (_useCustomTooltip == value) return;
+    _useCustomTooltip = value;
+    markNeedsPaint();
+  }
 
   LineChartData get data => _data;
   LineChartData _data;
@@ -83,7 +97,7 @@ class RenderLineChart extends RenderBaseChart<LineTouchResponse> {
   Size? mockTestSize;
 
   @visibleForTesting
-  LineChartPainter painter = LineChartPainter();
+  late LineChartPainter painter;
 
   PaintHolder<LineChartData> get paintHolder {
     return PaintHolder(data, targetData, textScale);
@@ -94,6 +108,7 @@ class RenderLineChart extends RenderBaseChart<LineTouchResponse> {
     final canvas = context.canvas
       ..save()
       ..translate(offset.dx, offset.dy);
+    painter = LineChartPainter(useCustomTooltip: useCustomTooltip);
     painter.paint(
       buildContext,
       CanvasWrapper(canvas, mockTestSize ?? size),

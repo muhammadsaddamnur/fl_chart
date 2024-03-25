@@ -17,6 +17,7 @@ class LineChart extends ImplicitlyAnimatedWidget {
     super.key,
     Duration swapAnimationDuration = const Duration(milliseconds: 150),
     Curve swapAnimationCurve = Curves.linear,
+    this.customTooltip,
   }) : super(
           duration: swapAnimationDuration,
           curve: swapAnimationCurve,
@@ -28,6 +29,10 @@ class LineChart extends ImplicitlyAnimatedWidget {
   /// We pass this key to our renderers which are supposed to
   /// render the chart itself (without anything around the chart).
   final Key? chartRendererKey;
+
+  // The final variable customTooltips is a nullable function that defines custom tooltips for LineChart or BarChart widgets based on provided LineBarSpot data.
+  // It accepts a List of LineBarSpot objects (or null) as input and returns a Widget.
+  final Widget Function(List<LineBarSpot>? lineBarSpots)? customTooltip;
 
   /// Creates a [_LineChartState]
   @override
@@ -56,8 +61,11 @@ class _LineChartState extends AnimatedWidgetBaseState<LineChart> {
         data: _withTouchedIndicators(_lineChartDataTween!.evaluate(animation)),
         targetData: _withTouchedIndicators(showingData),
         key: widget.chartRendererKey,
+        useCustomTooltip: widget.customTooltip != null,
       ),
       data: showingData,
+      chartData: _withTouchedIndicators(showingData),
+      customTooltip: widget.customTooltip,
     );
   }
 

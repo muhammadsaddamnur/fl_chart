@@ -48,6 +48,7 @@ void main() {
       data,
       targetData,
       textScale,
+      false,
     );
 
     final mockPainter = MockLineChartPainter();
