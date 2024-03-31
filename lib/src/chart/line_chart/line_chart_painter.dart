@@ -21,7 +21,7 @@ class LineChartPainter extends AxisChartPainter<LineChartData> {
   /// [textScale] used for scaling texts inside the chart,
   /// parent can use [MediaQuery.textScaleFactor] to respect
   /// the system's font size.
-  LineChartPainter() : super() {
+  LineChartPainter({this.useCustomTooltip = false}) : super() {
     _barPaint = Paint()..style = PaintingStyle.stroke;
 
     _barAreaPaint = Paint()..style = PaintingStyle.fill;
@@ -46,6 +46,7 @@ class LineChartPainter extends AxisChartPainter<LineChartData> {
       ..color = Colors.transparent
       ..strokeWidth = 1.0;
   }
+  final bool useCustomTooltip;
   late Paint _barPaint;
   late Paint _barAreaPaint;
   late Paint _barAreaLinesPaint;
@@ -156,14 +157,16 @@ class LineChartPainter extends AxisChartPainter<LineChartData> {
       }
       tooltipSpots = ShowingTooltipIndicators(barSpots);
 
-      drawTouchTooltip(
-        context,
-        canvasWrapper,
-        data.lineTouchData.touchTooltipData,
-        topSpot,
-        tooltipSpots,
-        holder,
-      );
+      if (useCustomTooltip == false) {
+        drawTouchTooltip(
+          context,
+          canvasWrapper,
+          data.lineTouchData.touchTooltipData,
+          topSpot,
+          tooltipSpots,
+          holder,
+        );
+      }
     }
   }
 

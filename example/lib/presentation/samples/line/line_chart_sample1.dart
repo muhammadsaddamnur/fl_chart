@@ -12,6 +12,37 @@ class _LineChart extends StatelessWidget {
     return LineChart(
       isShowingMainData ? sampleData1 : sampleData2,
       duration: const Duration(milliseconds: 250),
+      customTooltip: (lineBarSpots) {
+        return Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Container(
+            height: 60,
+            width: 130,
+            color: Colors.black,
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      const Text('x : '),
+                      Text(lineBarSpots?.map((e) => e.x).toList().toString() ??
+                          '-'),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      const Text('y : '),
+                      Text(lineBarSpots?.map((e) => e.y).toList().toString() ??
+                          '-'),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
