@@ -28,7 +28,7 @@ class LineChart extends ImplicitlyAnimatedWidget {
   /// render the chart itself (without anything around the chart).
   final Key? chartRendererKey;
 
-  // The final variable customTooltips is a nullable function that defines custom tooltips for LineChart or BarChart widgets based on provided LineBarSpot data.
+  // The final variable customTooltips is a nullable function that defines custom tooltips for LineChart widgets based on provided LineBarSpot data.
   // It accepts a List of LineBarSpot objects (or null) as input and returns a Widget.
   final Widget Function(List<LineBarSpot>? lineBarSpots)? customTooltip;
 
@@ -64,8 +64,8 @@ class _LineChartState extends AnimatedWidgetBaseState<LineChart> {
         useCustomTooltip: widget.customTooltip != null,
       ),
       data: showingData,
-      chartData: _withTouchedIndicators(showingData),
-      customTooltip: widget.customTooltip,
+      lineChartData: _withTouchedIndicators(showingData),
+      lineChartCustomTooltip: widget.customTooltip,
     );
   }
 

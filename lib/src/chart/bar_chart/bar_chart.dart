@@ -1,5 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:fl_chart/src/chart/bar_chart/bar_chart_helper.dart';
+import 'package:fl_chart/src/chart/bar_chart/bar_chart_painter.dart';
 import 'package:fl_chart/src/chart/bar_chart/bar_chart_renderer.dart';
 import 'package:fl_chart/src/chart/base/axis_chart/axis_chart_scaffold_widget.dart';
 import 'package:flutter/cupertino.dart';
@@ -17,6 +18,7 @@ class BarChart extends ImplicitlyAnimatedWidget {
     super.key,
     Duration swapAnimationDuration = const Duration(milliseconds: 150),
     Curve swapAnimationCurve = Curves.linear,
+    this.customTooltip,
   }) : super(
           duration: swapAnimationDuration,
           curve: swapAnimationCurve,
@@ -28,6 +30,10 @@ class BarChart extends ImplicitlyAnimatedWidget {
   /// We pass this key to our renderers which are supposed to
   /// render the chart itself (without anything around the chart).
   final Key? chartRendererKey;
+
+  // The final variable customTooltips is a nullable function that defines custom tooltips for BarChart widgets based on provided BarChartGroupData data.
+  // It accepts a List of BarChartGroupData objects (or null) as input and returns a Widget.
+  final Widget Function(BarTooltip? barTooltip)? customTooltip;
 
   /// Creates a [_BarChartState]
   @override
@@ -46,18 +52,26 @@ class _BarChartState extends AnimatedWidgetBaseState<BarChart> {
   final Map<int, List<int>> _showingTouchedTooltips = {};
 
   final _barChartHelper = BarChartHelper();
+  BarTooltip? _barTooltip;
 
   @override
   Widget build(BuildContext context) {
     final showingData = _getData();
 
     return AxisChartScaffoldWidget(
-      data: showingData,
       chart: BarChartLeaf(
         data: _withTouchedIndicators(_barChartDataTween!.evaluate(animation)),
         targetData: _withTouchedIndicators(showingData),
         key: widget.chartRendererKey,
+        useCustomTooltip: widget.customTooltip != null,
+        barTooltip: (barTooltip) {
+          _barTooltip = barTooltip;
+        },
       ),
+      data: showingData,
+      barChartData: _withTouchedIndicators(showingData),
+      barChartCustomTooltip: widget.customTooltip,
+      barTooltip: _barTooltip,
     );
   }
 

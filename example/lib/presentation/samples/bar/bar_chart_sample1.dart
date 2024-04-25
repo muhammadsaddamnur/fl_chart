@@ -73,6 +73,40 @@ class BarChartSample1State extends State<BarChartSample1> {
                     child: BarChart(
                       isPlaying ? randomData() : mainBarData(),
                       swapAnimationDuration: animDuration,
+                      // customTooltip: (barChartGroupData) {
+                      //   final x = barChartGroupData?.map((e) => e.x);
+                      //   return Padding(
+                      //     padding: const EdgeInsets.all(8.0),
+                      //     child: Container(
+                      //       height: 60,
+                      //       width: 130,
+                      //       color: Colors.black,
+                      //       child: Padding(
+                      //         padding: const EdgeInsets.all(8.0),
+                      //         child: Column(
+                      //           children: [
+                      //             Row(
+                      //               children: [
+                      //                 const Text('x : '),
+                      //                 Text(x.toString() ?? '-'),
+                      //               ],
+                      //             ),
+                      //             Row(
+                      //               children: [
+                      //                 const Text('y : '),
+                      //                 Text(barChartGroupData
+                      //                         ?.map((e) => e.barRods.toString())
+                      //                         .toList()
+                      //                         .toString() ??
+                      //                     '-'),
+                      //               ],
+                      //             ),
+                      //           ],
+                      //         ),
+                      //       ),
+                      //     ),
+                      //   );
+                      // },
                     ),
                   ),
                 ),

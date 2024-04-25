@@ -35,6 +35,8 @@ class BarChartData extends AxisChartData with EquatableMixin {
   /// Please see issue #1149 (https://github.com/imaNNeo/fl_chart/issues/1149) for vertical lines.
   BarChartData({
     List<BarChartGroupData>? barGroups,
+    List<FlSpot>? lineCharts,
+    LineBarChartData? lineBarChartData,
     double? groupsSpace,
     BarChartAlignment? alignment,
     FlTitlesData? titlesData,
@@ -51,6 +53,13 @@ class BarChartData extends AxisChartData with EquatableMixin {
         groupsSpace = groupsSpace ?? 16,
         alignment = alignment ?? BarChartAlignment.spaceEvenly,
         barTouchData = barTouchData ?? BarTouchData(),
+        lineCharts = lineCharts ?? const [],
+        lineBarChartData = lineBarChartData ??
+            LineBarChartData(
+              color: Colors.yellow,
+              strokeCap: StrokeCap.round,
+              strokeWidth: 1.5,
+            ),
         super(
           titlesData: titlesData ??
               const FlTitlesData(
@@ -69,6 +78,10 @@ class BarChartData extends AxisChartData with EquatableMixin {
   /// [BarChart] draws [barGroups] that each of them contains a list of [BarChartRodData].
   final List<BarChartGroupData> barGroups;
 
+  final List<FlSpot> lineCharts;
+
+  final LineBarChartData lineBarChartData;
+
   /// Apply space between the [barGroups].
   final double groupsSpace;
 
@@ -82,6 +95,8 @@ class BarChartData extends AxisChartData with EquatableMixin {
   /// and replaces provided values.
   BarChartData copyWith({
     List<BarChartGroupData>? barGroups,
+    List<FlSpot>? lineCharts,
+    LineBarChartData? lineBarChartData,
     double? groupsSpace,
     BarChartAlignment? alignment,
     FlTitlesData? titlesData,
@@ -96,6 +111,13 @@ class BarChartData extends AxisChartData with EquatableMixin {
     ExtraLinesData? extraLinesData,
   }) {
     return BarChartData(
+      lineCharts: lineCharts ?? this.lineCharts,
+      lineBarChartData: lineBarChartData ??
+          LineBarChartData(
+            color: Colors.yellow,
+            strokeCap: StrokeCap.round,
+            strokeWidth: 1.5,
+          ),
       barGroups: barGroups ?? this.barGroups,
       groupsSpace: groupsSpace ?? this.groupsSpace,
       alignment: alignment ?? this.alignment,
@@ -142,6 +164,8 @@ class BarChartData extends AxisChartData with EquatableMixin {
   @override
   List<Object?> get props => [
         barGroups,
+        lineCharts,
+        lineBarChartData,
         groupsSpace,
         alignment,
         titlesData,
@@ -928,4 +952,24 @@ class BarChartDataTween extends Tween<BarChartData> {
   /// Lerps a [BarChartData] based on [t] value, check [Tween.lerp].
   @override
   BarChartData lerp(double t) => begin!.lerp(begin!, end!, t);
+}
+
+class LineBarChartData with EquatableMixin {
+  LineBarChartData({
+    required this.strokeWidth,
+    required this.color,
+    required this.strokeCap,
+  });
+
+  final double strokeWidth;
+  final Color color;
+  final StrokeCap strokeCap;
+
+  /// Used for equality check, see [EquatableMixin].
+  @override
+  List<Object?> get props => [
+        strokeWidth,
+        color,
+        strokeCap,
+      ];
 }

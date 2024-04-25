@@ -2,6 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:fl_chart/src/chart/bar_chart/bar_chart_painter.dart';
 import 'package:fl_chart/src/chart/base/base_chart/base_chart_painter.dart';
 import 'package:fl_chart/src/chart/base/base_chart/render_base_chart.dart';
+import 'package:fl_chart/src/extensions/bar_chart_data_extension.dart';
 import 'package:fl_chart/src/utils/canvas_wrapper.dart';
 import 'package:flutter/cupertino.dart';
 
@@ -9,10 +10,18 @@ import 'package:flutter/cupertino.dart';
 
 /// Low level BarChart Widget.
 class BarChartLeaf extends LeafRenderObjectWidget {
-  const BarChartLeaf({super.key, required this.data, required this.targetData});
+  const BarChartLeaf({
+    super.key,
+    required this.data,
+    required this.targetData,
+    this.useCustomTooltip = false,
+    this.barTooltip,
+  });
 
   final BarChartData data;
   final BarChartData targetData;
+  final bool useCustomTooltip;
+  final void Function(BarTooltip? barTooltip)? barTooltip;
 
   @override
   RenderBarChart createRenderObject(BuildContext context) => RenderBarChart(
@@ -20,6 +29,8 @@ class BarChartLeaf extends LeafRenderObjectWidget {
         data,
         targetData,
         MediaQuery.of(context).textScaler,
+        useCustomTooltip,
+        barTooltip,
       );
 
   @override
@@ -28,7 +39,8 @@ class BarChartLeaf extends LeafRenderObjectWidget {
       ..data = data
       ..targetData = targetData
       ..textScaler = MediaQuery.of(context).textScaler
-      ..buildContext = context;
+      ..buildContext = context
+      ..useCustomTooltip = useCustomTooltip;
   }
 }
 // coverage:ignore-end
@@ -40,13 +52,26 @@ class RenderBarChart extends RenderBaseChart<BarTouchResponse> {
     BarChartData data,
     BarChartData targetData,
     TextScaler textScaler,
+    bool useCustomTooltip,
+    this.barTooltip,
   )   : _data = data,
         _targetData = targetData,
         _textScaler = textScaler,
+        _useCustomTooltip = useCustomTooltip,
         super(targetData.barTouchData, context);
+
+  final void Function(BarTooltip? barTooltip)? barTooltip;
 
   BarChartData get data => _data;
   BarChartData _data;
+
+  bool _useCustomTooltip;
+  bool get useCustomTooltip => _useCustomTooltip;
+  set useCustomTooltip(bool value) {
+    if (_useCustomTooltip == value) return;
+    _useCustomTooltip = value;
+    markNeedsPaint();
+  }
 
   set data(BarChartData value) {
     if (_data == value) return;
@@ -78,22 +103,72 @@ class RenderBarChart extends RenderBaseChart<BarTouchResponse> {
   Size? mockTestSize;
 
   @visibleForTesting
-  BarChartPainter painter = BarChartPainter();
+  late BarChartPainter painter;
 
   PaintHolder<BarChartData> get paintHolder =>
       PaintHolder(data, targetData, textScaler);
+
+  var points = <Offset>[];
+  Paint? linePaint;
 
   @override
   void paint(PaintingContext context, Offset offset) {
     final canvas = context.canvas
       ..save()
       ..translate(offset.dx, offset.dy);
+    linePaint ??= Paint()
+      ..color = _data.lineBarChartData.color
+      ..strokeWidth = _data.lineBarChartData.strokeWidth
+      ..strokeCap = _data.lineBarChartData.strokeCap;
+    painter = BarChartPainter(
+      useCustomTooltip: useCustomTooltip,
+      points: points,
+      lineBarPaint: linePaint,
+      barTooltip: barTooltip,
+    );
+    calculateLine(CanvasWrapper(canvas, mockTestSize ?? size), paintHolder);
+
     painter.paint(
       buildContext,
       CanvasWrapper(canvas, mockTestSize ?? size),
       paintHolder,
     );
     canvas.restore();
+  }
+
+  void calculateLine(
+      CanvasWrapper canvasWrapper, PaintHolder<BarChartData> holder) {
+    final viewSize = canvasWrapper.size;
+    final data = holder.data;
+
+    if (data.barGroups.isEmpty) {
+      return;
+    }
+    final groupsX = data.calculateGroupsX(canvasWrapper.size.width);
+    final groupBarsPosition = painter.calculateGroupAndBarsPosition(
+      canvasWrapper.size,
+      groupsX,
+      data.barGroups,
+    );
+
+    if (points.length < data.lineCharts.length) {
+      for (var j = 0; j < data.barGroups.length; j++) {
+        for (var i = 0; i < data.lineCharts.length; i++) {
+          if (data.barGroups[j].x == data.lineCharts[i].x) {
+            points.add(
+              Offset(
+                groupBarsPosition[j].barsX.first,
+                painter.getPixelY(
+                  data.lineCharts[i].y,
+                  viewSize,
+                  holder,
+                ),
+              ),
+            );
+          }
+        }
+      }
+    }
   }
 
   @override

@@ -1,4 +1,5 @@
 import 'package:fl_chart/fl_chart.dart';
+import 'package:fl_chart/src/chart/bar_chart/bar_chart_painter.dart';
 import 'package:fl_chart/src/chart/base/axis_chart/side_titles/side_titles_widget.dart';
 import 'package:fl_chart/src/extensions/fl_titles_data_extension.dart';
 import 'package:flutter/cupertino.dart';
@@ -27,13 +28,20 @@ class AxisChartScaffoldWidget extends StatefulWidget {
     super.key,
     required this.chart,
     required this.data,
-    this.chartData,
-    this.customTooltip,
+    this.lineChartData,
+    this.barChartData,
+    this.lineChartCustomTooltip,
+    this.barChartCustomTooltip,
+    this.barTooltip,
   });
   final Widget chart;
   final AxisChartData data;
-  final LineChartData? chartData;
-  final Widget Function(List<LineBarSpot>? lineBarSpots)? customTooltip;
+  final LineChartData? lineChartData;
+  final BarChartData? barChartData;
+  final Widget Function(List<LineBarSpot>? lineBarSpots)?
+      lineChartCustomTooltip;
+  final Widget Function(BarTooltip? barTooltip)? barChartCustomTooltip;
+  final BarTooltip? barTooltip;
 
   @override
   State<AxisChartScaffoldWidget> createState() =>
@@ -84,7 +92,8 @@ class _AxisChartScaffoldWidgetState extends State<AxisChartScaffoldWidget> {
   double tooltipHeight = 0;
   double tooltipWidth = 0;
 
-  List<Widget> stackWidgets(BoxConstraints constraints, BuildContext context) {
+  List<Widget> stackWidgets(
+      BoxConstraints constraints, BuildContext context, bool show) {
     final leftPosition =
         position.dx - widget.data.titlesData.allSidesPadding.left;
     final topPosition =
@@ -112,22 +121,37 @@ class _AxisChartScaffoldWidgetState extends State<AxisChartScaffoldWidget> {
         ),
         child: widget.chart,
       ),
-      if ((widget.chartData?.showingTooltipIndicators ?? []).isNotEmpty &&
-          widget.customTooltip != null) ...[
+      if ((widget.lineChartData?.showingTooltipIndicators ?? []).isNotEmpty &&
+          widget.lineChartCustomTooltip != null) ...[
         Positioned(
           left: left,
           top: top,
           child: Container(
             key: _contentKey,
             margin: widget.data.titlesData.allSidesPadding,
-            child: widget.customTooltip!(
-              widget.chartData!.showingTooltipIndicators.first.showingSpots
+            child: widget.lineChartCustomTooltip!(
+              widget.lineChartData!.showingTooltipIndicators.first.showingSpots
                   .map((e) => e)
                   .toList(),
             ),
           ),
         ),
-      ]
+      ],
+      if (show)
+        if (widget.barTooltip != null &&
+            widget.barChartCustomTooltip != null) ...[
+          Positioned(
+            left: left,
+            top: top,
+            child: Container(
+              key: _contentKey,
+              margin: widget.data.titlesData.allSidesPadding,
+              child: widget.barChartCustomTooltip!(
+                widget.barTooltip,
+              ),
+            ),
+          ),
+        ]
     ];
 
     int insertIndex(bool drawBelow) => drawBelow ? 0 : widgets.length;
@@ -181,6 +205,8 @@ class _AxisChartScaffoldWidgetState extends State<AxisChartScaffoldWidget> {
   void onPointerHover(PointerHoverEvent event) {
     setState(
       () {
+        show = true;
+
         final box = context.findRenderObject()! as RenderBox;
         final localPosition = box.globalToLocal(event.position);
         position = localPosition;
@@ -192,6 +218,8 @@ class _AxisChartScaffoldWidgetState extends State<AxisChartScaffoldWidget> {
   void onPointerMove(PointerMoveEvent event) {
     setState(
       () {
+        show = true;
+
         final box = context.findRenderObject()! as RenderBox;
         final localPosition = box.globalToLocal(event.position);
         position = localPosition;
@@ -203,6 +231,7 @@ class _AxisChartScaffoldWidgetState extends State<AxisChartScaffoldWidget> {
   void onPointerDown(PointerDownEvent event) {
     setState(
       () {
+        show = true;
         final box = context.findRenderObject()! as RenderBox;
         final localPosition = box.globalToLocal(event.position);
         position = localPosition;
@@ -220,19 +249,28 @@ class _AxisChartScaffoldWidgetState extends State<AxisChartScaffoldWidget> {
     }
   }
 
+  bool show = false;
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
         backgroundWidth = constraints.maxWidth;
         backgroundHeight = constraints.maxHeight;
-        return widget.customTooltip == null
-            ? Stack(children: stackWidgets(constraints, context))
+        return widget.lineChartCustomTooltip == null &&
+                widget.barChartCustomTooltip == null
+            ? Stack(children: stackWidgets(constraints, context, show))
             : Listener(
                 onPointerHover: onPointerHover,
                 onPointerMove: onPointerMove,
                 onPointerDown: onPointerDown,
-                child: Stack(children: stackWidgets(constraints, context)),
+                onPointerUp: (event) {
+                  setState(() {
+                    show = !show;
+                  });
+                },
+                child:
+                    Stack(children: stackWidgets(constraints, context, show)),
               );
       },
     );

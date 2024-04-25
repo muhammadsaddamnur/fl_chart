@@ -44,11 +44,7 @@ void main() {
 
     final mockBuildContext = MockBuildContext();
     final renderBarChart = RenderBarChart(
-      mockBuildContext,
-      data,
-      targetData,
-      textScaler,
-    );
+        mockBuildContext, data, targetData, textScaler, false, null);
 
     final mockPainter = MockBarChartPainter();
     final mockPaintingContext = MockPaintingContext();

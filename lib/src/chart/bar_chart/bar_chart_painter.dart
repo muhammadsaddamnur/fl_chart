@@ -1,5 +1,6 @@
 import 'dart:core';
 import 'dart:math';
+import 'dart:ui' as ui;
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:fl_chart/src/chart/base/axis_chart/axis_chart_painter.dart';
@@ -12,6 +13,22 @@ import 'package:fl_chart/src/utils/canvas_wrapper.dart';
 import 'package:fl_chart/src/utils/utils.dart';
 import 'package:flutter/material.dart';
 
+class BarTooltip {
+  BarTooltip({
+    required this.tooltipData,
+    required this.showOnBarGroup,
+    required this.barGroupIndex,
+    required this.showOnRodData,
+    required this.barRodIndex,
+  });
+
+  final BarTouchTooltipData tooltipData;
+  final BarChartGroupData showOnBarGroup;
+  final int barGroupIndex;
+  final BarChartRodData showOnRodData;
+  final int barRodIndex;
+}
+
 /// Paints [BarChartData] in the canvas, it can be used in a [CustomPainter]
 class BarChartPainter extends AxisChartPainter<BarChartData> {
   /// Paints [dataList] into canvas, it is the animating [BarChartData],
@@ -22,7 +39,12 @@ class BarChartPainter extends AxisChartPainter<BarChartData> {
   /// [textScale] used for scaling texts inside the chart,
   /// parent can use [MediaQuery.textScaleFactor] to respect
   /// the system's font size.
-  BarChartPainter() : super() {
+  BarChartPainter({
+    this.useCustomTooltip = false,
+    this.lineBarPaint,
+    this.points,
+    this.barTooltip,
+  }) : super() {
     _barPaint = Paint()..style = PaintingStyle.fill;
     _barStrokePaint = Paint()..style = PaintingStyle.stroke;
 
@@ -35,12 +57,16 @@ class BarChartPainter extends AxisChartPainter<BarChartData> {
       ..color = Colors.transparent
       ..strokeWidth = 1.0;
   }
+  final bool useCustomTooltip;
+  final List<Offset>? points;
+  final Paint? lineBarPaint;
   late Paint _barPaint;
   late Paint _barStrokePaint;
   late Paint _bgTouchTooltipPaint;
   late Paint _borderTouchTooltipPaint;
+  final void Function(BarTooltip? barTooltip)? barTooltip;
 
-  List<GroupBarsPosition>? _groupBarsPosition;
+  List<GroupBarsPosition>? groupBarsPosition;
 
   /// Paints [BarChartData] into the provided canvas.
   @override
@@ -58,7 +84,7 @@ class BarChartPainter extends AxisChartPainter<BarChartData> {
     }
 
     final groupsX = data.calculateGroupsX(canvasWrapper.size.width);
-    _groupBarsPosition = calculateGroupAndBarsPosition(
+    groupBarsPosition = calculateGroupAndBarsPosition(
       canvasWrapper.size,
       groupsX,
       data.barGroups,
@@ -73,7 +99,7 @@ class BarChartPainter extends AxisChartPainter<BarChartData> {
       );
     }
 
-    drawBars(canvasWrapper, _groupBarsPosition!, holder);
+    drawBars(canvasWrapper, groupBarsPosition!, holder);
 
     if (data.extraLinesData.extraLinesOnTop) {
       super.drawHorizontalLines(
@@ -83,7 +109,7 @@ class BarChartPainter extends AxisChartPainter<BarChartData> {
         canvasWrapper.size,
       );
     }
-
+    if (barTooltip != null) barTooltip!(null);
     for (var i = 0; i < targetData.barGroups.length; i++) {
       final barGroup = targetData.barGroups[i];
       for (var j = 0; j < barGroup.barRods.length; j++) {
@@ -92,23 +118,36 @@ class BarChartPainter extends AxisChartPainter<BarChartData> {
         }
         final barRod = barGroup.barRods[j];
 
-        drawTouchTooltip(
-          context,
-          canvasWrapper,
-          _groupBarsPosition!,
-          targetData.barTouchData.touchTooltipData,
-          barGroup,
-          i,
-          barRod,
-          j,
-          holder,
-        );
+        if (barTooltip != null) {
+          barTooltip!(
+            BarTooltip(
+              tooltipData: targetData.barTouchData.touchTooltipData,
+              showOnBarGroup: barGroup,
+              barGroupIndex: i,
+              showOnRodData: barRod,
+              barRodIndex: j,
+            ),
+          );
+        }
+        if (useCustomTooltip == false) {
+          drawTouchTooltip(
+            context,
+            canvasWrapper,
+            groupBarsPosition!,
+            targetData.barTouchData.touchTooltipData,
+            barGroup,
+            i,
+            barRod,
+            j,
+            holder,
+          );
+        }
       }
     }
   }
 
   /// Calculates bars position alongside group positions.
-  @visibleForTesting
+  // @visibleForTesting
   List<GroupBarsPosition> calculateGroupAndBarsPosition(
     Size viewSize,
     List<double> groupsX,
@@ -327,6 +366,31 @@ class BarChartPainter extends AxisChartPainter<BarChartData> {
           }
         }
       }
+    }
+    const pointMode = ui.PointMode.polygon;
+    // var points = <Offset>[];
+    // for (var j = 0; j < data.barGroups.length; j++) {
+    //   for (var i = 0; i < data.lineCharts.length; i++) {
+    //     if (data.barGroups[j].x == data.lineCharts[i].x) {
+    //       final barRod = data.barGroups.first.barRods.first;
+    //       final widthHalf = barRod.width / 2;
+    //       points.add(
+    //         Offset(
+    //           (data.lineCharts[i].x + 1) * groupBarsPosition.first.barsX.first +
+    //               (i == 0 ? 0 : (widthHalf + (widthHalf / 4)) * j),
+    //           getPixelY(
+    //             data.lineCharts[i].y,
+    //             viewSize,
+    //             holder,
+    //           ),
+    //         ),
+    //       );
+    //     }
+    //   }
+    // }
+
+    if (points != null && lineBarPaint != null) {
+      canvasWrapper.drawPoints(pointMode, points!, lineBarPaint!);
     }
   }
 
@@ -591,15 +655,15 @@ class BarChartPainter extends AxisChartPainter<BarChartData> {
       return null;
     }
 
-    if (_groupBarsPosition == null) {
+    if (groupBarsPosition == null) {
       final groupsX = data.calculateGroupsX(viewSize.width);
-      _groupBarsPosition =
+      groupBarsPosition =
           calculateGroupAndBarsPosition(viewSize, groupsX, data.barGroups);
     }
 
     /// Find the nearest barRod
-    for (var i = 0; i < _groupBarsPosition!.length; i++) {
-      final groupBarPos = _groupBarsPosition![i];
+    for (var i = 0; i < groupBarsPosition!.length; i++) {
+      final groupBarPos = groupBarsPosition![i];
       for (var j = 0; j < groupBarPos.barsX.length; j++) {
         final barX = groupBarPos.barsX[j];
         final barWidth = targetData.barGroups[i].barRods[j].width;

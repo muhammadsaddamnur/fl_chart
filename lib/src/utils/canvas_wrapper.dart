@@ -45,6 +45,10 @@ class CanvasWrapper {
   /// Directly calls [Canvas.drawPath]
   void drawPath(Path path, Paint paint) => canvas.drawPath(path, paint);
 
+  /// Directly calls [Canvas.drawPoints]
+  void drawPoints(PointMode pointMode, List<Offset> points, Paint paint) =>
+      canvas.drawPoints(pointMode, points, paint);
+
   /// Directly calls [Canvas.saveLayer]
   void saveLayer(Rect bounds, Paint paint) => canvas.saveLayer(bounds, paint);
 
