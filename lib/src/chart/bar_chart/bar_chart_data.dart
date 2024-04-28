@@ -4,7 +4,6 @@ import 'dart:ui';
 
 import 'package:equatable/equatable.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:fl_chart/src/chart/bar_chart/bar_chart_helper.dart';
 import 'package:fl_chart/src/extensions/color_extension.dart';
 import 'package:fl_chart/src/utils/lerp.dart';
 import 'package:fl_chart/src/utils/utils.dart';
@@ -36,6 +35,8 @@ class BarChartData extends AxisChartData with EquatableMixin {
   /// Please see issue #1149 (https://github.com/imaNNeo/fl_chart/issues/1149) for vertical lines.
   BarChartData({
     List<BarChartGroupData>? barGroups,
+    List<FlSpot>? lineCharts,
+    LineBarChartData? lineBarChartData,
     double? groupsSpace,
     BarChartAlignment? alignment,
     FlTitlesData? titlesData,
@@ -52,14 +53,17 @@ class BarChartData extends AxisChartData with EquatableMixin {
         groupsSpace = groupsSpace ?? 16,
         alignment = alignment ?? BarChartAlignment.spaceEvenly,
         barTouchData = barTouchData ?? BarTouchData(),
+        lineCharts = lineCharts ?? const [],
+        lineBarChartData = lineBarChartData ??
+            LineBarChartData(
+              color: Colors.yellow,
+              strokeCap: StrokeCap.round,
+              strokeWidth: 1.5,
+            ),
         super(
           titlesData: titlesData ??
               FlTitlesData(
-                topTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: false,
-                  ),
-                ),
+                topTitles: AxisTitles(),
               ),
           gridData: gridData ?? FlGridData(),
           rangeAnnotations: rangeAnnotations ?? RangeAnnotations(),
@@ -67,14 +71,16 @@ class BarChartData extends AxisChartData with EquatableMixin {
           extraLinesData: extraLinesData ?? ExtraLinesData(),
           minX: 0,
           maxX: 1,
-          maxY: maxY ??
-              BarChartHelper.calculateMaxAxisValues(barGroups ?? []).maxY,
-          minY: minY ??
-              BarChartHelper.calculateMaxAxisValues(barGroups ?? []).minY,
+          maxY: maxY ?? double.nan,
+          minY: minY ?? double.nan,
         );
 
   /// [BarChart] draws [barGroups] that each of them contains a list of [BarChartRodData].
   final List<BarChartGroupData> barGroups;
+
+  final List<FlSpot> lineCharts;
+
+  final LineBarChartData lineBarChartData;
 
   /// Apply space between the [barGroups].
   final double groupsSpace;
@@ -89,6 +95,8 @@ class BarChartData extends AxisChartData with EquatableMixin {
   /// and replaces provided values.
   BarChartData copyWith({
     List<BarChartGroupData>? barGroups,
+    List<FlSpot>? lineCharts,
+    LineBarChartData? lineBarChartData,
     double? groupsSpace,
     BarChartAlignment? alignment,
     FlTitlesData? titlesData,
@@ -103,6 +111,13 @@ class BarChartData extends AxisChartData with EquatableMixin {
     ExtraLinesData? extraLinesData,
   }) {
     return BarChartData(
+      lineCharts: lineCharts ?? this.lineCharts,
+      lineBarChartData: lineBarChartData ??
+          LineBarChartData(
+            color: Colors.yellow,
+            strokeCap: StrokeCap.round,
+            strokeWidth: 1.5,
+          ),
       barGroups: barGroups ?? this.barGroups,
       groupsSpace: groupsSpace ?? this.groupsSpace,
       alignment: alignment ?? this.alignment,
@@ -149,6 +164,8 @@ class BarChartData extends AxisChartData with EquatableMixin {
   @override
   List<Object?> get props => [
         barGroups,
+        lineCharts,
+        lineBarChartData,
         groupsSpace,
         alignment,
         titlesData,
@@ -294,6 +311,7 @@ class BarChartRodData with EquatableMixin {
   /// and the x is equivalent to the [BarChartGroupData.x] value.
   ///
   /// It renders each rod using [color], [width], and [borderRadius] for rounding corners and also [borderSide] for stroke border.
+  /// Optionally you can use [borderDashArray] if you want your borders to have dashed lines.
   ///
   /// This bar draws with provided [color] or [gradient].
   /// You must provide one of them.
@@ -323,6 +341,7 @@ class BarChartRodData with EquatableMixin {
     this.gradient,
     double? width,
     BorderRadius? borderRadius,
+    this.borderDashArray,
     BorderSide? borderSide,
     BackgroundBarChartRodData? backDrawRodData,
     List<BarChartRodStackItem>? rodStackItems,
@@ -357,6 +376,9 @@ class BarChartRodData with EquatableMixin {
   /// If you want to have a rounded rod, set this value.
   final BorderRadius? borderRadius;
 
+  /// If you want to have dashed border, set this value.
+  final List<int>? borderDashArray;
+
   /// If you want to have a border for rod, set this value.
   final BorderSide borderSide;
 
@@ -381,6 +403,7 @@ class BarChartRodData with EquatableMixin {
     Gradient? gradient,
     double? width,
     BorderRadius? borderRadius,
+    List<int>? dashArray,
     BorderSide? borderSide,
     BackgroundBarChartRodData? backDrawRodData,
     List<BarChartRodStackItem>? rodStackItems,
@@ -392,6 +415,7 @@ class BarChartRodData with EquatableMixin {
       gradient: gradient ?? this.gradient,
       width: width ?? this.width,
       borderRadius: borderRadius ?? this.borderRadius,
+      borderDashArray: borderDashArray,
       borderSide: borderSide ?? this.borderSide,
       backDrawRodData: backDrawRodData ?? this.backDrawRodData,
       rodStackItems: rodStackItems ?? this.rodStackItems,
@@ -406,6 +430,7 @@ class BarChartRodData with EquatableMixin {
       color: Color.lerp(a.color, b.color, t),
       width: lerpDouble(a.width, b.width, t),
       borderRadius: BorderRadius.lerp(a.borderRadius, b.borderRadius, t),
+      borderDashArray: lerpIntList(a.borderDashArray, b.borderDashArray, t),
       borderSide: BorderSide.lerp(a.borderSide, b.borderSide, t),
       fromY: lerpDouble(a.fromY, b.fromY, t),
       toY: lerpDouble(a.toY, b.toY, t)!,
@@ -426,6 +451,7 @@ class BarChartRodData with EquatableMixin {
         toY,
         width,
         borderRadius,
+        borderDashArray,
         borderSide,
         backDrawRodData,
         rodStackItems,
@@ -576,7 +602,7 @@ class BackgroundBarChartRodData with EquatableMixin {
 
 /// Holds data to handle touch events, and touch responses in the [BarChart].
 ///
-/// There is a touch flow, explained [here](https://github.com/imaNNeo/fl_chart/blob/master/repo_files/documentations/handle_touches.md)
+/// There is a touch flow, explained [here](https://github.com/imaNNeo/fl_chart/blob/main/repo_files/documentations/handle_touches.md)
 /// in a simple way, each chart's renderer captures the touch events, and passes the pointerEvent
 /// to the painter, and gets touched spot, and wraps it into a concrete [BarTouchResponse].
 class BarTouchData extends FlTouchData<BarTouchResponse> with EquatableMixin {
@@ -926,4 +952,24 @@ class BarChartDataTween extends Tween<BarChartData> {
   /// Lerps a [BarChartData] based on [t] value, check [Tween.lerp].
   @override
   BarChartData lerp(double t) => begin!.lerp(begin!, end!, t);
+}
+
+class LineBarChartData with EquatableMixin {
+  LineBarChartData({
+    required this.strokeWidth,
+    required this.color,
+    required this.strokeCap,
+  });
+
+  final double strokeWidth;
+  final Color color;
+  final StrokeCap strokeCap;
+
+  /// Used for equality check, see [EquatableMixin].
+  @override
+  List<Object?> get props => [
+        strokeWidth,
+        color,
+        strokeCap,
+      ];
 }

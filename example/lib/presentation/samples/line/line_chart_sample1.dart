@@ -11,7 +11,7 @@ class _LineChart extends StatelessWidget {
   Widget build(BuildContext context) {
     return LineChart(
       isShowingMainData ? sampleData1 : sampleData2,
-      swapAnimationDuration: const Duration(milliseconds: 250),
+      duration: const Duration(milliseconds: 250),
       customTooltip: (lineBarSpots) {
         return Padding(
           padding: const EdgeInsets.all(8.0),

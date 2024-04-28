@@ -1,5 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:fl_chart/src/chart/base/axis_chart/axis_chart_scaffold_widget.dart';
+import 'package:fl_chart/src/chart/line_chart/line_chart_helper.dart';
 import 'package:fl_chart/src/chart/line_chart/line_chart_renderer.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -15,13 +16,10 @@ class LineChart extends ImplicitlyAnimatedWidget {
     this.data, {
     this.chartRendererKey,
     super.key,
-    Duration swapAnimationDuration = const Duration(milliseconds: 150),
-    Curve swapAnimationCurve = Curves.linear,
+    super.duration = const Duration(milliseconds: 150),
+    super.curve = Curves.linear,
     this.customTooltip,
-  }) : super(
-          duration: swapAnimationDuration,
-          curve: swapAnimationCurve,
-        );
+  });
 
   /// Determines how the [LineChart] should be look like.
   final LineChartData data;
@@ -30,7 +28,7 @@ class LineChart extends ImplicitlyAnimatedWidget {
   /// render the chart itself (without anything around the chart).
   final Key? chartRendererKey;
 
-  // The final variable customTooltips is a nullable function that defines custom tooltips for LineChart or BarChart widgets based on provided LineBarSpot data.
+  // The final variable customTooltips is a nullable function that defines custom tooltips for LineChart widgets based on provided LineBarSpot data.
   // It accepts a List of LineBarSpot objects (or null) as input and returns a Widget.
   final Widget Function(List<LineBarSpot>? lineBarSpots)? customTooltip;
 
@@ -52,6 +50,8 @@ class _LineChartState extends AnimatedWidgetBaseState<LineChart> {
 
   final Map<int, List<int>> _showingTouchedIndicators = {};
 
+  final _lineChartHelper = LineChartHelper();
+
   @override
   Widget build(BuildContext context) {
     final showingData = _getData();
@@ -64,8 +64,8 @@ class _LineChartState extends AnimatedWidgetBaseState<LineChart> {
         useCustomTooltip: widget.customTooltip != null,
       ),
       data: showingData,
-      chartData: _withTouchedIndicators(showingData),
-      customTooltip: widget.customTooltip,
+      lineChartData: _withTouchedIndicators(showingData),
+      lineChartCustomTooltip: widget.customTooltip,
     );
   }
 
@@ -87,21 +87,44 @@ class _LineChartState extends AnimatedWidgetBaseState<LineChart> {
   }
 
   LineChartData _getData() {
-    final lineTouchData = widget.data.lineTouchData;
-    if (lineTouchData.enabled && lineTouchData.handleBuiltInTouches) {
-      _providedTouchCallback = lineTouchData.touchCallback;
-      return widget.data.copyWith(
-        lineTouchData: widget.data.lineTouchData
-            .copyWith(touchCallback: _handleBuiltInTouch),
+    var newData = widget.data;
+
+    /// Calculate minX, maxX, minY, maxY for [LineChartData] if they are null,
+    /// it is necessary to render the chart correctly.
+    if (newData.minX.isNaN ||
+        newData.maxX.isNaN ||
+        newData.minY.isNaN ||
+        newData.maxY.isNaN) {
+      final values = LineChartHelper.calculateMaxAxisValues(
+        newData.lineBarsData,
+      );
+      newData = newData.copyWith(
+        minX: newData.minX.isNaN ? values.minX : newData.minX,
+        maxX: newData.maxX.isNaN ? values.maxX : newData.maxX,
+        minY: newData.minY.isNaN ? values.minY : newData.minY,
+        maxY: newData.maxY.isNaN ? values.maxY : newData.maxY,
       );
     }
-    return widget.data;
+
+    final lineTouchData = newData.lineTouchData;
+    if (lineTouchData.enabled && lineTouchData.handleBuiltInTouches) {
+      _providedTouchCallback = lineTouchData.touchCallback;
+      newData = newData.copyWith(
+        lineTouchData:
+            newData.lineTouchData.copyWith(touchCallback: _handleBuiltInTouch),
+      );
+    }
+
+    return newData;
   }
 
   void _handleBuiltInTouch(
     FlTouchEvent event,
     LineTouchResponse? touchResponse,
   ) {
+    if (!mounted) {
+      return;
+    }
     _providedTouchCallback?.call(event, touchResponse);
 
     if (!event.isInterestedForInteractions ||

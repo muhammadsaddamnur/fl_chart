@@ -196,7 +196,7 @@ class _Chart extends StatelessWidget {
         maxX: 10,
         baselineX: baselineX,
       ),
-      swapAnimationDuration: Duration.zero,
+      duration: Duration.zero,
     );
   }
 }
