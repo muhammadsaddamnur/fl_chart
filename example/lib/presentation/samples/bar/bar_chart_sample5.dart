@@ -303,7 +303,6 @@ class BarChartSample5State extends State<BarChartSample5> {
             );
           },
           BarChartData(
-            alignment: BarChartAlignment.center,
             maxY: 15,
             minY: -2,
             groupsSpace: 12,
