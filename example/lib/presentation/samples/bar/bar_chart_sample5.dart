@@ -307,12 +307,12 @@ class BarChartSample5State extends State<BarChartSample5> {
             minY: -2,
             groupsSpace: 12,
             lineBarChartData: LineBarChartData(
-              color: Colors.green,
+              color: Colors.red,
               strokeWidth: 2,
               strokeCap: StrokeCap.round,
             ),
             barTouchData: BarTouchData(
-              handleBuiltInTouches: false,
+              handleBuiltInTouches: true,
               touchCallback: (FlTouchEvent event, barTouchResponse) {
                 if (!event.isInterestedForInteractions ||
                     barTouchResponse == null ||

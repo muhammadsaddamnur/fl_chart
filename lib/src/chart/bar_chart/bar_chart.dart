@@ -78,7 +78,7 @@ class _BarChartState extends AnimatedWidgetBaseState<BarChart> {
   BarChartData _withTouchedIndicators(BarChartData barChartData) {
     if (!barChartData.barTouchData.enabled ||
         !barChartData.barTouchData.handleBuiltInTouches) {
-      return barChartData;
+      return widget.data;
     }
 
     final newGroups = <BarChartGroupData>[];
@@ -94,6 +94,7 @@ class _BarChartState extends AnimatedWidgetBaseState<BarChart> {
 
     return barChartData.copyWith(
       barGroups: newGroups,
+      lineBarChartData: widget.data.lineBarChartData,
     );
   }
 
@@ -113,6 +114,7 @@ class _BarChartState extends AnimatedWidgetBaseState<BarChart> {
       return newData.copyWith(
         barTouchData:
             newData.barTouchData.copyWith(touchCallback: _handleBuiltInTouch),
+        lineBarChartData: widget.data.lineBarChartData,
       );
     }
     return newData;
