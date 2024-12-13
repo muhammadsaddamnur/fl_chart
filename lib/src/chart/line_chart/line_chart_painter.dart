@@ -145,14 +145,14 @@ class LineChartPainter extends AxisChartPainter<LineChartData> {
         final spot = barData.spots[i];
         final x = getPixelX(spot.x, canvasWrapper.size, holder);
         final y = getPixelY(spot.y, canvasWrapper.size, holder);
-        if (markerStyle.isShowSellMarks) {
+        if (markerStyle.isShowSellMarks && spot.isSell) {
           _drawSellMarker(
             canvasWrapper.canvas,
             x,
             y - markerStyle.sellMarkMargin,
           );
         }
-        if (markerStyle.isShowBuyMarks) {
+        if (markerStyle.isShowBuyMarks && spot.isBuy) {
           _drawBuyMarker(
             canvasWrapper.canvas,
             x,
