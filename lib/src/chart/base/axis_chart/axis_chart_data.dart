@@ -461,9 +461,15 @@ class FlSpot with EquatableMixin {
   ///
   /// [y] determines cartesian (axis based) vertically position
   /// 0 means most bottom point of the chart
-  const FlSpot(this.x, this.y);
+  const FlSpot(this.x, this.y, {this.isBuy = false, this.isSell = false});
   final double x;
   final double y;
+
+  /// is buy mark for this line
+  final bool isBuy;
+
+  /// is sell mark for this line
+  final bool isSell;
 
   /// Copies current [FlSpot] to a new [FlSpot],
   /// and replaces provided values.
