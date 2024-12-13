@@ -15,11 +15,13 @@ class LineChartLeaf extends LeafRenderObjectWidget {
     required this.data,
     required this.targetData,
     this.useCustomTooltip = false,
+    this.markerStyle = const MarkerStyle(),
   });
 
   final LineChartData data;
   final LineChartData targetData;
   final bool useCustomTooltip;
+  final MarkerStyle markerStyle;
 
   @override
   RenderLineChart createRenderObject(BuildContext context) => RenderLineChart(
@@ -28,6 +30,7 @@ class LineChartLeaf extends LeafRenderObjectWidget {
         targetData,
         MediaQuery.of(context).textScaleFactor,
         useCustomTooltip,
+        markerStyle,
       );
 
   @override
@@ -50,9 +53,11 @@ class RenderLineChart extends RenderBaseChart<LineTouchResponse> {
     LineChartData targetData,
     double textScale,
     bool useCustomTooltip,
+    MarkerStyle markerStyle,
   )   : _data = data,
         _targetData = targetData,
         _textScale = textScale,
+        _markerStyle = markerStyle,
         _useCustomTooltip = useCustomTooltip,
         super(
           targetData.lineTouchData,
@@ -60,6 +65,7 @@ class RenderLineChart extends RenderBaseChart<LineTouchResponse> {
         );
 
   bool _useCustomTooltip;
+  MarkerStyle _markerStyle;
   bool get useCustomTooltip => _useCustomTooltip;
   set useCustomTooltip(bool value) {
     if (_useCustomTooltip == value) return;
@@ -108,7 +114,8 @@ class RenderLineChart extends RenderBaseChart<LineTouchResponse> {
     final canvas = context.canvas
       ..save()
       ..translate(offset.dx, offset.dy);
-    painter = LineChartPainter(useCustomTooltip: useCustomTooltip);
+    painter = LineChartPainter(
+        useCustomTooltip: useCustomTooltip, markerStyle: _markerStyle);
     painter.paint(
       buildContext,
       CanvasWrapper(canvas, mockTestSize ?? size),

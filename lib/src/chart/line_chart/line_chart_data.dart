@@ -1558,3 +1558,51 @@ class LineChartDataTween extends Tween<LineChartData> {
   @override
   LineChartData lerp(double t) => begin!.lerp(begin!, end!, t);
 }
+
+class MarkerStyle {
+  const MarkerStyle({
+    this.isShowSellMarks = false,
+    this.isShowBuyMarks = false,
+    this.sellMarkColor = const Color(0xFFFF0000),
+    this.buyMarkColor = const Color(0xFF00D2B4),
+    this.sellMarkMargin = 20.0,
+    this.buyMarkMargin = 20.0,
+    this.markerSize = 16.0,
+    this.markerBuyTextStyle,
+    this.markerSellTextStyle,
+  });
+
+  final bool isShowSellMarks;
+  final bool isShowBuyMarks;
+  final Color sellMarkColor;
+  final Color buyMarkColor;
+  final double sellMarkMargin;
+  final double buyMarkMargin;
+  final double markerSize;
+  final TextStyle? markerSellTextStyle;
+  final TextStyle? markerBuyTextStyle;
+
+  MarkerStyle copyWith({
+    bool? isShowSellMarks,
+    bool? isShowBuyMarks,
+    Color? sellMarkColor,
+    Color? buyMarkColor,
+    double? sellMarkMargin,
+    double? buyMarkMargin,
+    double? markerSize,
+    TextStyle? markerSellTextStyle,
+    TextStyle? markerBuyTextStyle,
+  }) {
+    return MarkerStyle(
+      isShowSellMarks: isShowSellMarks ?? this.isShowSellMarks,
+      isShowBuyMarks: isShowBuyMarks ?? this.isShowBuyMarks,
+      sellMarkColor: sellMarkColor ?? this.sellMarkColor,
+      buyMarkColor: buyMarkColor ?? this.buyMarkColor,
+      sellMarkMargin: sellMarkMargin ?? this.sellMarkMargin,
+      buyMarkMargin: buyMarkMargin ?? this.buyMarkMargin,
+      markerSize: markerSize ?? this.markerSize,
+      markerSellTextStyle: markerSellTextStyle ?? this.markerSellTextStyle,
+      markerBuyTextStyle: markerBuyTextStyle ?? this.markerBuyTextStyle,
+    );
+  }
+}

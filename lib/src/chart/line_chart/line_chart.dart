@@ -19,6 +19,7 @@ class LineChart extends ImplicitlyAnimatedWidget {
     super.duration = const Duration(milliseconds: 150),
     super.curve = Curves.linear,
     this.customTooltip,
+    this.markerStyle = const MarkerStyle(),
   });
 
   /// Determines how the [LineChart] should be look like.
@@ -31,6 +32,10 @@ class LineChart extends ImplicitlyAnimatedWidget {
   // The final variable customTooltips is a nullable function that defines custom tooltips for LineChart widgets based on provided LineBarSpot data.
   // It accepts a List of LineBarSpot objects (or null) as input and returns a Widget.
   final Widget Function(List<LineBarSpot>? lineBarSpots)? customTooltip;
+
+  /// marker styling
+  /// for buy and sell
+  final MarkerStyle markerStyle;
 
   /// Creates a [_LineChartState]
   @override
@@ -62,6 +67,7 @@ class _LineChartState extends AnimatedWidgetBaseState<LineChart> {
         targetData: _withTouchedIndicators(showingData),
         key: widget.chartRendererKey,
         useCustomTooltip: widget.customTooltip != null,
+        markerStyle: widget.markerStyle,
       ),
       data: showingData,
       lineChartData: _withTouchedIndicators(showingData),

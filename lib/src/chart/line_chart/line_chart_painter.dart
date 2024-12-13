@@ -21,7 +21,10 @@ class LineChartPainter extends AxisChartPainter<LineChartData> {
   /// [textScale] used for scaling texts inside the chart,
   /// parent can use [MediaQuery.textScaleFactor] to respect
   /// the system's font size.
-  LineChartPainter({this.useCustomTooltip = false}) : super() {
+  LineChartPainter({
+    this.useCustomTooltip = false,
+    this.markerStyle = const MarkerStyle(),
+  }) : super() {
     _barPaint = Paint()..style = PaintingStyle.stroke;
 
     _barAreaPaint = Paint()..style = PaintingStyle.fill;
@@ -47,6 +50,9 @@ class LineChartPainter extends AxisChartPainter<LineChartData> {
       ..strokeWidth = 1.0;
   }
   final bool useCustomTooltip;
+
+  final MarkerStyle markerStyle;
+
   late Paint _barPaint;
   late Paint _barAreaPaint;
   late Paint _barAreaLinesPaint;
@@ -131,6 +137,28 @@ class LineChartPainter extends AxisChartPainter<LineChartData> {
         lineIndexDrawingInfo.add(
           LineIndexDrawingInfo(barData, i, spot, index, indicatorData),
         );
+      }
+      if (!markerStyle.isShowBuyMarks && !markerStyle.isShowSellMarks) {
+        continue;
+      }
+      for (var i = 0; i < barData.spots.length; i++) {
+        final spot = barData.spots[i];
+        final x = getPixelX(spot.x, canvasWrapper.size, holder);
+        final y = getPixelY(spot.y, canvasWrapper.size, holder);
+        if (markerStyle.isShowSellMarks) {
+          _drawSellMarker(
+            canvasWrapper.canvas,
+            x,
+            y - markerStyle.sellMarkMargin,
+          );
+        }
+        if (markerStyle.isShowBuyMarks) {
+          _drawBuyMarker(
+            canvasWrapper.canvas,
+            x,
+            y + markerStyle.buyMarkMargin,
+          );
+        }
       }
     }
 
@@ -859,6 +887,127 @@ class LineChartPainter extends AxisChartPainter<LineChartData> {
         }
       }
     }
+  }
+
+  void _drawSellMarker(Canvas canvas, double x, double y) {
+    // canvas.save();
+    Paint sellMarkerPaint = Paint()
+      ..color = markerStyle.sellMarkColor
+      ..style = PaintingStyle.fill;
+
+    TextPainter textPainter = TextPainter(
+      text: TextSpan(
+        text: 'S',
+        style: markerStyle.markerBuyTextStyle ??
+            TextStyle(
+              color: Colors.white,
+              fontSize: markerStyle.markerSize * 0.7,
+              fontWeight: FontWeight.bold,
+            ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+
+    Rect markerRect = Rect.fromLTWH(
+      x - markerStyle.markerSize / 2,
+      y - markerStyle.markerSize / 2,
+      markerStyle.markerSize,
+      markerStyle.markerSize,
+    );
+
+    // Draw shadow behind the marker
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        markerRect.shift(Offset(-1, 3)), // Offset the shadow
+        Radius.circular(4),
+      ),
+      Paint()
+        ..color = Colors.black.withOpacity(0.53) // Shadow color
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, 4)
+        ..style = PaintingStyle.fill,
+    );
+
+    Path trianglePath = Path();
+    trianglePath.moveTo(markerRect.center.dx, markerRect.bottom + 4);
+    trianglePath.lineTo(markerRect.left, markerRect.bottom - 5);
+    trianglePath.lineTo(markerRect.right, markerRect.bottom - 5);
+    trianglePath.close();
+
+    canvas.drawPath(trianglePath, sellMarkerPaint);
+
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(markerRect, Radius.circular(4)),
+      sellMarkerPaint,
+    );
+
+    textPainter.paint(
+      canvas,
+      Offset(
+        markerRect.left + (markerRect.width - textPainter.width) / 2,
+        markerRect.top + (markerRect.height - textPainter.height) / 2,
+      ),
+    );
+    // canvas.restore();
+  }
+
+  void _drawBuyMarker(Canvas canvas, double x, double y) {
+    // canvas.save();
+    Paint buyMarkerPaint = Paint()
+      ..color = Color(0xFF00D2B4)
+      ..style = PaintingStyle.fill;
+
+    TextPainter textPainter = TextPainter(
+      text: TextSpan(
+        text: 'B',
+        style: markerStyle.markerSellTextStyle ??
+            TextStyle(
+              color: Colors.black,
+              fontSize: markerStyle.markerSize * 0.7,
+              fontWeight: FontWeight.bold,
+            ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+
+    Rect markerRect = Rect.fromLTWH(
+      x - markerStyle.markerSize / 2,
+      y - markerStyle.markerSize / 2,
+      markerStyle.markerSize,
+      markerStyle.markerSize,
+    );
+
+    // Draw shadow behind the marker
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        markerRect.shift(Offset(-1, 3)), // Offset the shadow
+        Radius.circular(4),
+      ),
+      Paint()
+        ..color = Colors.black.withOpacity(0.53) // Shadow color
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, 4)
+        ..style = PaintingStyle.fill,
+    );
+
+    Path trianglePath = Path();
+    trianglePath.moveTo(markerRect.center.dx, markerRect.top - 4);
+    trianglePath.lineTo(markerRect.left, markerRect.top + 5);
+    trianglePath.lineTo(markerRect.right, markerRect.top + 5);
+    trianglePath.close();
+    canvas.drawPath(trianglePath, buyMarkerPaint);
+
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(markerRect, Radius.circular(4)),
+      buyMarkerPaint,
+    );
+
+    textPainter.paint(
+      canvas,
+      Offset(
+        markerRect.left + (markerRect.width - textPainter.width) / 2,
+        markerRect.top + (markerRect.height - textPainter.height) / 2,
+      ),
+    );
+    // canvas.restore();
   }
 
   @visibleForTesting

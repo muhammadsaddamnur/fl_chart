@@ -1,5 +1,7 @@
+import 'package:fl_chart_app/presentation/full_line_chart_sample2.dart';
 import 'package:fl_chart_app/presentation/pages/home_page.dart';
 import 'package:fl_chart_app/presentation/resources/app_colors.dart';
+import 'package:fl_chart_app/presentation/samples/line/line_chart_sample2.dart';
 import 'package:fl_chart_app/util/app_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -22,7 +24,8 @@ final appRouterConfig = GoRouter(
               /// We set a key for HomePage to prevent recreate it
               /// when user choose a new chart type to show
               key: const ValueKey('home_page'),
-              child: HomePage(showingChartType: chartType),
+              // child: HomePage(showingChartType: chartType),
+              child: FullLineChartSample2(),
             ),
           ),
         )
