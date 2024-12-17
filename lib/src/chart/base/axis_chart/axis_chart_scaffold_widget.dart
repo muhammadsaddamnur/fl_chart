@@ -171,64 +171,70 @@ class _AxisChartScaffoldWidgetState extends State<AxisChartScaffoldWidget> {
             ),
           ),
         ],
-      Stack(
-        children: List.generate(
-          widget.lineChartData?.lineBarsData.first.spots.length ?? 0,
-          (index) {
-            final spot = widget.lineChartData?.lineBarsData.first.spots[index];
-            if (spot == null || spot.isBuy == false && spot.isSell == false) {
-              return Container();
-            }
-            final x = getPixelX(
-              spot.x,
-              Size(
-                backgroundWidth -
-                    widget.data.titlesData.allSidesPadding.left +
-                    4,
-                backgroundHeight,
-              ),
-              widget.lineChartData?.maxX ?? 0,
-              widget.lineChartData?.minX ?? 0,
-            );
+      if ((widget.markerStyle?.isShowBuyMarks ?? false) == false &&
+          (widget.markerStyle?.isShowSellMarks ?? false) == false)
+        ...[]
+      else ...[
+        Stack(
+          children: List.generate(
+            widget.lineChartData?.lineBarsData.first.spots.length ?? 0,
+            (index) {
+              final spot =
+                  widget.lineChartData?.lineBarsData.first.spots[index];
+              if (spot == null || spot.isBuy == false && spot.isSell == false) {
+                return Container();
+              }
+              final x = getPixelX(
+                spot.x,
+                Size(
+                  backgroundWidth - widget.data.titlesData.allSidesPadding.left,
+                  backgroundHeight,
+                ),
+                widget.lineChartData?.maxX ?? 0,
+                widget.lineChartData?.minX ?? 0,
+              );
 
-            final y = getPixelY(
-              spot.y,
-              Size(
-                backgroundWidth - widget.data.titlesData.allSidesPadding.left,
-                backgroundHeight -
-                    widget.data.titlesData.allSidesPadding.bottom,
-              ),
-              widget.lineChartData?.maxY ?? 0,
-              widget.lineChartData?.minY ?? 0,
-            );
+              final y = getPixelY(
+                spot.y,
+                Size(
+                  backgroundWidth - widget.data.titlesData.allSidesPadding.left,
+                  backgroundHeight -
+                      widget.data.titlesData.allSidesPadding.bottom,
+                ),
+                widget.lineChartData?.maxY ?? 0,
+                widget.lineChartData?.minY ?? 0,
+              );
 
-            return Stack(
-              children: [
-                // sell
-                if (spot.isSell)
-                  Positioned(
-                    left: x + widget.data.titlesData.allSidesPadding.left - 3,
-                    top: y -
-                        (widget.markerStyle?.sellMarkMargin ?? 8.0) +
-                        (widget.markerStyle?.markerSize ?? 16.0),
-                    child: CustomPaint(
-                      painter: BubbleTailPainterSell(widget.markerStyle),
+              return Stack(
+                children: [
+                  // sell
+                  if (spot.isSell &&
+                      (widget.markerStyle?.isShowSellMarks ?? false))
+                    Positioned(
+                      left: x + widget.data.titlesData.allSidesPadding.left,
+                      top: y -
+                          (widget.markerStyle?.sellMarkMargin ?? 8.0) +
+                          (widget.markerStyle?.markerSize ?? 16.0),
+                      child: CustomPaint(
+                        painter: BubbleTailPainterSell(widget.markerStyle),
+                      ),
                     ),
-                  ),
-                if (spot.isBuy)
-                  Positioned(
-                    left: x + widget.data.titlesData.allSidesPadding.left - 3,
-                    top: y + (widget.markerStyle?.buyMarkMargin ?? 8.0),
-                    child: CustomPaint(
-                      painter: BubbleTailPainterBuy(widget.markerStyle),
+                  if (spot.isBuy &&
+                      (widget.markerStyle?.isShowBuyMarks ?? false))
+                    Positioned(
+                      left: x + widget.data.titlesData.allSidesPadding.left,
+                      top: y + (widget.markerStyle?.buyMarkMargin ?? 8.0),
+                      child: CustomPaint(
+                        painter: BubbleTailPainterBuy(widget.markerStyle),
+                      ),
                     ),
-                  ),
-                // buy
-              ],
-            );
-          },
+                  // buy
+                ],
+              );
+            },
+          ),
         ),
-      ),
+      ]
     ];
 
     int insertIndex(bool drawBelow) => drawBelow ? 0 : widgets.length;
