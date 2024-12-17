@@ -6,8 +6,11 @@ class FullLineChartSample2 extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: LineChartSample2(),
+    return const Scaffold(
+      body: Padding(
+        padding: EdgeInsets.only(top: 40),
+        child: LineChartSample2(),
+      ),
     );
   }
 }
