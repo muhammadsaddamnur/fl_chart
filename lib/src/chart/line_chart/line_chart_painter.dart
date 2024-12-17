@@ -1027,13 +1027,13 @@ class LineChartPainter extends AxisChartPainter<LineChartData> {
       buyMarkerPaint,
     );
 
-    // textPainter.paint(
-    //   canvas.canvas,
-    //   Offset(
-    //     markerRect.left + (markerRect.width - textPainter.width) / 2,
-    //     markerRect.top + (markerRect.height - textPainter.height) / 2,
-    //   ),
-    // );
+    textPainter.paint(
+      canvas,
+      Offset(
+        markerRect.left + (markerRect.width - textPainter.width) / 2,
+        markerRect.top + (markerRect.height - textPainter.height) / 2,
+      ),
+    );
     // canvas.restore();
   }
 

@@ -51,14 +51,17 @@ class _LineChartSample2State extends State<LineChartSample2> {
             padding: const EdgeInsets.only(
               right: 12,
               left: 12,
-              top: 24,
+              // top: 24,
               bottom: 12,
             ),
             child: LineChart(
               mainData(),
-              markerStyle: MarkerStyle(
+              markerStyle: const MarkerStyle(
                 isShowBuyMarks: true,
                 isShowSellMarks: true,
+                // markerSize: 16,
+                buyMarkMargin: 16,
+                sellMarkMargin: 20,
               ),
               customTooltip: ((lineBarSpots) {
                 print('ssss $lineBarSpots');
