@@ -369,17 +369,16 @@ class LineChartPainter extends AxisChartPainter<LineChartData> {
         final markPainter = barData.dotData
             .getMarkPainter(spot, xPercentInLine, barData, i, markerStyle)
           ..isDrawSell = spot.isSell;
-        // if (spot.isSell)
         canvasWrapper.drawDot(painter, spot, Offset(x, y));
 
         // canvasWrapper = canvasWrapper.copyWith(isDrawSell: spot.isSell);
         // if (spot.isSell)
-        // canvasWrapper.drawSellMarker(
-        //   markPainter,
-        //   spot.isSell,
-        //   markerStyle,
-        //   Offset(x, y),
-        // );
+        canvasWrapper.drawSellMarker(
+          markPainter,
+          spot.isSell,
+          markerStyle,
+          Offset(x, y),
+        );
 
         // for (var i = 0; i < fromSpots.length; i++) {
         // final spot = fromSpots[i];]x
