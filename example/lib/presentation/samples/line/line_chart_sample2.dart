@@ -19,20 +19,27 @@ class _LineChartSample2State extends State<LineChartSample2> {
 
   bool showAvg = false;
 
-  List<FlSpot> spots = [
-    FlSpot(0, 3, isBuy: true, isSell: true),
-    FlSpot(2.6, 2, isSell: true),
-    FlSpot(4.9, 5, isBuy: true),
-    FlSpot(6.8, 3.1, isSell: true),
-    FlSpot(8, 4, isBuy: true),
-    FlSpot(9.5, 3, isBuy: true, isSell: true),
-    FlSpot(11, 4, isSell: true),
-    FlSpot(11, 6, isSell: true),
-    FlSpot(12, 8, isSell: true),
-    FlSpot(13, 4, isSell: true),
-    FlSpot(15, 5, isSell: true),
-    FlSpot(16, 4, isSell: true),
-  ];
+  List<FlSpot> spots = [];
+
+  @override
+  void initState() {
+    super.initState();
+    spots = [
+      FlSpot(0, 3, isBuy: true, isSell: true),
+      FlSpot(2.6, 2, isSell: true),
+      FlSpot(4.9, 5, isBuy: true),
+      FlSpot(6.8, 3.1, isSell: true),
+      FlSpot(8, 4, isBuy: true),
+      FlSpot(9.5, 3, isBuy: true, isSell: true),
+      FlSpot(11, 4, isSell: true),
+      FlSpot(11, 6, isSell: true),
+      FlSpot(13, 5, isBuy: true),
+      FlSpot(14.5, 4.5, isSell: true),
+      FlSpot(16, 6, isBuy: true, isSell: true),
+      FlSpot(17.5, 5.5, isSell: true),
+      FlSpot(19, 7, isBuy: true),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -214,6 +221,13 @@ class _LineChartSample2State extends State<LineChartSample2> {
   }
 
   LineChartData mainData() {
+    double? minX, maxX, minY, maxY;
+    for (var element in spots) {
+      minX = minX == null ? element.x : min(minX, element.x);
+      maxX = maxX == null ? element.x : max(maxX, element.x);
+      minY = minY == null ? element.y : min(minY, element.y);
+      maxY = maxY == null ? element.y : max(maxY, element.y);
+    }
     return LineChartData(
       gridData: FlGridData(
         show: false,
@@ -259,13 +273,13 @@ class _LineChartSample2State extends State<LineChartSample2> {
         ),
       ),
       borderData: FlBorderData(
-        show: true,
+        show: false,
         border: Border.all(color: const Color(0xff37434d)),
       ),
-      // minX: 0,
-      // maxX: 11,
-      // minY: 0,
-      // maxY: 6,
+      minX: minX != null ? (minX - 0.5) : null,
+      maxX: maxX != null ? (maxX + 0.5) : null,
+      minY: minY != null ? (minY - 1) : null,
+      maxY: maxY != null ? (maxY + 1) : null,
       lineBarsData: [
         LineChartBarData(
           spots: spots,
@@ -273,10 +287,10 @@ class _LineChartSample2State extends State<LineChartSample2> {
           gradient: LinearGradient(
             colors: gradientColors,
           ),
-          barWidth: 5,
+          barWidth: 1,
           isStrokeCapRound: true,
           dotData: FlDotData(
-            show: true,
+            show: false,
           ),
           belowBarData: BarAreaData(
             show: true,

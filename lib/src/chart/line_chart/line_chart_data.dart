@@ -903,8 +903,8 @@ class FLMarkerPainterImpl extends FLMarkerPainter {
   ) {
     // if (!spot) return;
     print('spot $spot');
-    // if (!isDrawSell) return;
-
+    canvas.save();
+    if (!isDrawSell) return;
     // var random = Random().nextInt(2);
     // if (random == 0) return;
 
@@ -978,7 +978,7 @@ class FLMarkerPainterImpl extends FLMarkerPainter {
   }
 
   @override
-  List<Object?> get props => [];
+  List<Object?> get props => [isDrawSell];
 }
 
 /// This class is an implementation of a [FlDotPainter] that draws
@@ -1704,8 +1704,8 @@ class MarkerStyle {
     this.isShowBuyMarks = false,
     this.sellMarkColor = const Color(0xFFFF0000),
     this.buyMarkColor = const Color(0xFF00D2B4),
-    this.sellMarkMargin = 20.0,
-    this.buyMarkMargin = 20.0,
+    this.sellMarkMargin = 16.0,
+    this.buyMarkMargin = 16.0,
     this.markerSize = 16.0,
     this.markerBuyTextStyle,
     this.markerSellTextStyle,
