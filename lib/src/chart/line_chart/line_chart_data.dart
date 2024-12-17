@@ -1,4 +1,5 @@
 // coverage:ignore-file
+import 'dart:math';
 import 'dart:ui';
 
 import 'package:equatable/equatable.dart';
@@ -778,6 +779,14 @@ typedef GetDotPainterCallback = FlDotPainter Function(
   int,
 );
 
+typedef GetMarkPainterCallback = FLMarkerPainter Function(
+  FlSpot,
+  double,
+  LineChartBarData,
+  int,
+  MarkerStyle,
+);
+
 FlDotPainter _defaultGetDotPainter(
   FlSpot spot,
   double xPercentage,
@@ -792,6 +801,17 @@ FlDotPainter _defaultGetDotPainter(
   );
 }
 
+FLMarkerPainter _defaultGetMarkPainter(
+  FlSpot spot,
+  double xPercentage,
+  LineChartBarData bar,
+  int index,
+  MarkerStyle? markerStyle, {
+  double? size,
+}) {
+  return FLMarkerPainterImpl();
+}
+
 /// This class holds data about drawing spot dots on the drawing bar line.
 class FlDotData with EquatableMixin {
   /// set [show] false to prevent dots from drawing,
@@ -801,8 +821,10 @@ class FlDotData with EquatableMixin {
     bool? show,
     CheckToShowDot? checkToShowDot,
     GetDotPainterCallback? getDotPainter,
+    GetMarkPainterCallback? getMarkPainter,
   })  : show = show ?? true,
         checkToShowDot = checkToShowDot ?? showAllDots,
+        getMarkPainter = getMarkPainter ?? _defaultGetMarkPainter,
         getDotPainter = getDotPainter ?? _defaultGetDotPainter;
 
   /// Determines show or hide all dots.
@@ -815,12 +837,17 @@ class FlDotData with EquatableMixin {
   /// The [FlSpot] is provided as parameter to this callback
   final GetDotPainterCallback getDotPainter;
 
+  /// Callback which is called to set the painter of the given [FlSpot].
+  /// The [FlSpot] is provided as parameter to this callback
+  final GetMarkPainterCallback getMarkPainter;
+
   /// Lerps a [FlDotData] based on [t] value, check [Tween.lerp].
   static FlDotData lerp(FlDotData a, FlDotData b, double t) {
     return FlDotData(
       show: b.show,
       checkToShowDot: b.checkToShowDot,
       getDotPainter: b.getDotPainter,
+      getMarkPainter: b.getMarkPainter,
     );
   }
 
@@ -830,6 +857,7 @@ class FlDotData with EquatableMixin {
         show,
         checkToShowDot,
         getDotPainter,
+        getMarkPainter,
       ];
 }
 
@@ -840,6 +868,117 @@ abstract class FlDotPainter with EquatableMixin {
 
   /// This method should be overridden to return the size of the shape.
   Size getSize(FlSpot spot);
+}
+
+abstract class FLMarkerPainter with EquatableMixin {
+  /// this draw sell marker
+  void drawSell(
+    Canvas canvas,
+    bool spot,
+    Offset offsetInCanvas,
+    MarkerStyle markerStyle,
+  );
+
+  late bool isDrawSell;
+
+  /// this draw buy marker
+  void drawBuy(Canvas canvas, FlSpot spot, Offset offsetInCanvas);
+
+  /// this draw stop loss marker
+  Size getSize(FlSpot spot);
+}
+
+class FLMarkerPainterImpl extends FLMarkerPainter {
+  @override
+  void drawBuy(Canvas canvas, FlSpot spot, Offset offsetInCanvas) {
+    // TODO: implement drawBuy
+  }
+
+  @override
+  void drawSell(
+    Canvas canvas,
+    bool spot,
+    Offset offsetInCanvas,
+    MarkerStyle markerStyle,
+  ) {
+    // if (!spot) return;
+    print('spot $spot');
+    // if (!isDrawSell) return;
+
+    // var random = Random().nextInt(2);
+    // if (random == 0) return;
+
+    final sellMarkerPaint = Paint()
+      ..color = markerStyle.sellMarkColor
+      ..style = PaintingStyle.fill;
+
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: 'S',
+        style: markerStyle.markerBuyTextStyle ??
+            TextStyle(
+              color: Colors.white,
+              fontSize: markerStyle.markerSize * 0.7,
+              fontWeight: FontWeight.bold,
+            ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+
+    offsetInCanvas = Offset(
+      offsetInCanvas.dx,
+      offsetInCanvas.dy - markerStyle.buyMarkMargin,
+    );
+
+    final markerRect = Rect.fromCenter(
+      center: offsetInCanvas,
+      width: markerStyle.markerSize,
+      height: markerStyle.markerSize,
+    );
+
+    // Draw shadow behind the marker
+
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        markerRect.shift(const Offset(-1, 3)), // Offset the shadow
+        const Radius.circular(4),
+      ),
+      Paint()
+        ..color = Colors.black.withOpacity(0.53) // Shadow color
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4)
+        ..style = PaintingStyle.fill,
+    );
+
+    final trianglePath = Path()
+      ..moveTo(markerRect.center.dx, markerRect.bottom + 4)
+      ..lineTo(markerRect.left, markerRect.bottom - 5)
+      ..lineTo(markerRect.right, markerRect.bottom - 5)
+      ..close();
+
+    canvas
+      ..drawPath(trianglePath, sellMarkerPaint)
+      ..drawRRect(
+        RRect.fromRectAndRadius(markerRect, const Radius.circular(4)),
+        sellMarkerPaint,
+      );
+
+    textPainter.paint(
+      canvas,
+      Offset(
+        markerRect.left + (markerRect.width - textPainter.width) / 2,
+        markerRect.top + (markerRect.height - textPainter.height) / 2,
+      ),
+    );
+  }
+
+  @override
+  Size getSize(FlSpot spot) {
+    // TODO: implement getSize
+    throw UnimplementedError();
+  }
+
+  @override
+  List<Object?> get props => [];
 }
 
 /// This class is an implementation of a [FlDotPainter] that draws

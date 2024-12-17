@@ -485,7 +485,7 @@ class FlSpot with EquatableMixin {
 
   ///Prints x and y coordinates of FlSpot list
   @override
-  String toString() => '($x, $y)';
+  String toString() => '($x, $y, isBuy: $isBuy, isSell: $isSell)';
 
   /// Used for splitting lines, or maybe other concepts.
   static const FlSpot nullSpot = FlSpot(double.nan, double.nan);
@@ -504,6 +504,8 @@ class FlSpot with EquatableMixin {
   List<Object?> get props => [
         x,
         y,
+        isBuy,
+        isSell,
       ];
 
   /// Lerps a [FlSpot] based on [t] value, check [Tween.lerp].

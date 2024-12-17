@@ -4,6 +4,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:fl_chart/src/extensions/path_extension.dart';
 import 'package:fl_chart/src/utils/utils.dart';
 import 'package:flutter/cupertino.dart' hide Image;
+import 'package:flutter/material.dart' as mt;
 
 typedef DrawCallback = void Function();
 
@@ -12,12 +13,26 @@ typedef DrawCallback = void Function();
 /// We wrapped the canvas here, because we needed to write tests for our drawing system.
 /// Now in tests we can verify that these functions called with a specific value.
 class CanvasWrapper {
-  CanvasWrapper(
-    this.canvas,
-    this.size,
-  );
+  CanvasWrapper(this.canvas, this.size,
+      {this.isDrawSell = false, this.spots = const []});
   final Canvas canvas;
   final Size size;
+  final bool isDrawSell;
+  final List<FlSpot> spots;
+
+  CanvasWrapper copyWith({
+    Canvas? canvas,
+    Size? size,
+    bool? isDrawSell,
+    List<FlSpot>? spots,
+  }) {
+    return CanvasWrapper(
+      canvas ?? this.canvas,
+      size ?? this.size,
+      isDrawSell: isDrawSell ?? this.isDrawSell,
+      spots: spots ?? this.spots,
+    );
+  }
 
   /// Directly calls [Canvas.drawRRect]
   void drawRRect(RRect rrect, Paint paint) => canvas.drawRRect(rrect, paint);
@@ -109,6 +124,77 @@ class CanvasWrapper {
   void drawDot(FlDotPainter painter, FlSpot spot, Offset offset) {
     painter.draw(canvas, spot, offset);
   }
+
+  void drawSellMarker(
+    FLMarkerPainter painter,
+    bool spot,
+    MarkerStyle markerStyle,
+    Offset offset,
+  ) {
+    // drawSellMarker(spot.x, spot.y, markerStyle);
+    painter.drawSell(canvas, spot, offset, markerStyle);
+  }
+
+  // void drawSellMarker(double x, double y, MarkerStyle markerStyle) {
+  //   // canvas.save();
+  //   Paint sellMarkerPaint = Paint()
+  //     ..color = markerStyle.sellMarkColor
+  //     ..style = PaintingStyle.fill;
+
+  //   TextPainter textPainter = TextPainter(
+  //     text: TextSpan(
+  //       text: 'S',
+  //       style: markerStyle.markerBuyTextStyle ??
+  //           TextStyle(
+  //             color: mt.Colors.white,
+  //             fontSize: markerStyle.markerSize * 0.7,
+  //             fontWeight: FontWeight.bold,
+  //           ),
+  //     ),
+  //     textDirection: TextDirection.ltr,
+  //   )..layout();
+
+  //   Rect markerRect = Rect.fromLTWH(
+  //     x - markerStyle.markerSize / 2,
+  //     y - markerStyle.markerSize / 2,
+  //     markerStyle.markerSize,
+  //     markerStyle.markerSize,
+  //   );
+
+  //   // Draw shadow behind the marker
+  //   canvas.drawRRect(
+  //     RRect.fromRectAndRadius(
+  //       markerRect.shift(Offset(-1, 3)), // Offset the shadow
+  //       Radius.circular(4),
+  //     ),
+  //     Paint()
+  //       ..color = mt.Colors.black.withOpacity(0.53) // Shadow color
+  //       ..maskFilter = MaskFilter.blur(BlurStyle.normal, 4)
+  //       ..style = PaintingStyle.fill,
+  //   );
+
+  //   Path trianglePath = Path();
+  //   trianglePath.moveTo(markerRect.center.dx, markerRect.bottom + 4);
+  //   trianglePath.lineTo(markerRect.left, markerRect.bottom - 5);
+  //   trianglePath.lineTo(markerRect.right, markerRect.bottom - 5);
+  //   trianglePath.close();
+
+  //   canvas.drawPath(trianglePath, sellMarkerPaint);
+
+  //   canvas.drawRRect(
+  //     RRect.fromRectAndRadius(markerRect, Radius.circular(4)),
+  //     sellMarkerPaint,
+  //   );
+
+  //   textPainter.paint(
+  //     canvas,
+  //     Offset(
+  //       markerRect.left + (markerRect.width - textPainter.width) / 2,
+  //       markerRect.top + (markerRect.height - textPainter.height) / 2,
+  //     ),
+  //   );
+  //   // canvas.restore();
+  // }
 
   /// Handles performing multiple draw actions rotated.
   void drawRotated({

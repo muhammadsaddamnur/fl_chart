@@ -92,6 +92,23 @@ class _AxisChartScaffoldWidgetState extends State<AxisChartScaffoldWidget> {
   double tooltipHeight = 0;
   double tooltipWidth = 0;
 
+  double getPixelX(double spotX, Size viewSize, double maxX, double minX) {
+    // final data = holder.data;
+    final deltaX = maxX - minX;
+    if (deltaX == 0.0) {
+      return 0;
+    }
+    return ((spotX - minX) / deltaX) * viewSize.width;
+  }
+
+  double getPixelY(double spotY, Size viewSize, double maxY, double minY) {
+    final deltaY = maxY - minY;
+    if (deltaY == 0.0) {
+      return viewSize.height;
+    }
+    return viewSize.height - (((spotY - minY) / deltaY) * viewSize.height);
+  }
+
   List<Widget> stackWidgets(
       BoxConstraints constraints, BuildContext context, bool show) {
     final leftPosition =
@@ -111,7 +128,22 @@ class _AxisChartScaffoldWidgetState extends State<AxisChartScaffoldWidget> {
             ? 0.0
             : topPosition;
 
+    // final leftMark =
+
     final widgets = <Widget>[
+      // Align(
+      //   alignment: Alignment(0, 0),
+      //   child: Container(
+      //     height: 20,
+      //     width: 20,
+      //     color: Colors.red,
+      //   ),
+      // ),
+      // Expanded(
+      //     child: Container(
+      //   color: Colors.blue,
+      // )),
+
       Container(
         margin: widget.data.titlesData.allSidesPadding,
         decoration: BoxDecoration(
@@ -151,7 +183,47 @@ class _AxisChartScaffoldWidgetState extends State<AxisChartScaffoldWidget> {
               ),
             ),
           ),
-        ]
+        ],
+      Stack(
+        children: List.generate(
+          widget.lineChartData?.lineBarsData.first.spots.length ?? 0,
+          (index) {
+            print(
+                'Xs : ${widget.lineChartData?.lineBarsData.first.spots[index].x}');
+            final spot = widget.lineChartData?.lineBarsData.first.spots[index];
+
+            var x = getPixelX(
+                spot?.x ?? 0,
+                Size(
+                    backgroundWidth -
+                        widget.data.titlesData.allSidesPadding.left,
+                    backgroundHeight),
+                widget.lineChartData?.maxX ?? 0,
+                widget.lineChartData?.minX ?? 0);
+
+            var y = getPixelY(
+                spot?.y ?? 0,
+                Size(
+                  backgroundWidth - widget.data.titlesData.allSidesPadding.left,
+                  backgroundHeight -
+                      widget.data.titlesData.allSidesPadding.bottom,
+                ),
+                widget.lineChartData?.maxY ?? 0,
+                widget.lineChartData?.minY ?? 0);
+
+            return Positioned(
+              left: x + widget.data.titlesData.allSidesPadding.left - 10,
+              top: y + (spot?.isSell ?? false ? 10 : -30),
+              // alignment: Alignment(x, y),
+              child: Container(
+                height: 20,
+                width: 20,
+                color: spot?.isSell ?? false ? Colors.red : Colors.green,
+              ),
+            );
+          },
+        ),
+      ),
     ];
 
     int insertIndex(bool drawBelow) => drawBelow ? 0 : widgets.length;

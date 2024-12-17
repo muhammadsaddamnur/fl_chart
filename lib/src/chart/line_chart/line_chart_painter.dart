@@ -1,3 +1,5 @@
+// ignore_for_file: prefer_final_locals, omit_local_variable_types, prefer_const_constructors
+
 import 'dart:math';
 
 import 'package:fl_chart/fl_chart.dart';
@@ -108,6 +110,16 @@ class LineChartPainter extends AxisChartPainter<LineChartData> {
       }
 
       drawBarLine(canvasWrapper, barData, holder);
+
+      print(
+          'barchartdata length: ${barData.spots.length}, minX: ${barData.mostLeftSpot.x}, maxX: ${barData.mostRightSpot.x}, minY: ${barData.mostBottomSpot.y}, maxY: ${barData.mostTopSpot.y}');
+      print("touchData: ${data.lineTouchData.touchTooltipData}");
+      print(
+          "beetween bars data: ${data.betweenBarsData}, length spot: ${barData.spots.length}");
+
+      print("sell: ${barData.spots[i].isSell}, index: $i");
+
+      // if (barData.spots[i].isSell)
       drawDots(canvasWrapper, barData, holder);
 
       if (data.extraLinesData.extraLinesOnTop) {
@@ -140,25 +152,6 @@ class LineChartPainter extends AxisChartPainter<LineChartData> {
       }
       if (!markerStyle.isShowBuyMarks && !markerStyle.isShowSellMarks) {
         continue;
-      }
-      for (var i = 0; i < barData.spots.length; i++) {
-        final spot = barData.spots[i];
-        final x = getPixelX(spot.x, canvasWrapper.size, holder);
-        final y = getPixelY(spot.y, canvasWrapper.size, holder);
-        if (markerStyle.isShowSellMarks && spot.isSell) {
-          _drawSellMarker(
-            canvasWrapper.canvas,
-            x,
-            y - markerStyle.sellMarkMargin,
-          );
-        }
-        if (markerStyle.isShowBuyMarks && spot.isBuy) {
-          _drawBuyMarker(
-            canvasWrapper.canvas,
-            x,
-            y + markerStyle.buyMarkMargin,
-          );
-        }
       }
     }
 
@@ -365,6 +358,7 @@ class LineChartPainter extends AxisChartPainter<LineChartData> {
 
     for (var i = 0; i < barData.spots.length; i++) {
       final spot = barData.spots[i];
+
       if (spot.isNotNull() && barData.dotData.checkToShowDot(spot, barData)) {
         final x = getPixelX(spot.x, viewSize, holder);
         final y = getPixelY(spot.y, viewSize, holder);
@@ -372,7 +366,41 @@ class LineChartPainter extends AxisChartPainter<LineChartData> {
         final painter =
             barData.dotData.getDotPainter(spot, xPercentInLine, barData, i);
 
+        final markPainter = barData.dotData
+            .getMarkPainter(spot, xPercentInLine, barData, i, markerStyle)
+          ..isDrawSell = spot.isSell;
+        // if (spot.isSell)
         canvasWrapper.drawDot(painter, spot, Offset(x, y));
+
+        // canvasWrapper = canvasWrapper.copyWith(isDrawSell: spot.isSell);
+        // if (spot.isSell)
+        // canvasWrapper.drawSellMarker(
+        //   markPainter,
+        //   spot.isSell,
+        //   markerStyle,
+        //   Offset(x, y),
+        // );
+
+        // for (var i = 0; i < fromSpots.length; i++) {
+        // final spot = fromSpots[i];]x
+        // final x = getPixelX(spot.x, viewSize, holder);
+        // final y = getPixelY(spot.y, viewSize, holder);
+        if (markerStyle.isShowSellMarks && spot.isSell) {
+          // _drawSellMarker(
+          //   canvasWrapper.canvas,
+          //   x,
+          //   y - markerStyle.sellMarkMargin,
+          // );
+          // canvasWrapper.drawSellMarker(x, y, markerStyle);
+        }
+        if (markerStyle.isShowBuyMarks && spot.isBuy) {
+          // _drawBuyMarker(
+          //   canvasWrapper.canvas,
+          //   x,
+          //   y + markerStyle.buyMarkMargin,
+          // );
+        }
+        // }
       }
     }
   }
@@ -1000,13 +1028,13 @@ class LineChartPainter extends AxisChartPainter<LineChartData> {
       buyMarkerPaint,
     );
 
-    textPainter.paint(
-      canvas,
-      Offset(
-        markerRect.left + (markerRect.width - textPainter.width) / 2,
-        markerRect.top + (markerRect.height - textPainter.height) / 2,
-      ),
-    );
+    // textPainter.paint(
+    //   canvas.canvas,
+    //   Offset(
+    //     markerRect.left + (markerRect.width - textPainter.width) / 2,
+    //     markerRect.top + (markerRect.height - textPainter.height) / 2,
+    //   ),
+    // );
     // canvas.restore();
   }
 
@@ -1093,6 +1121,7 @@ class LineChartPainter extends AxisChartPainter<LineChartData> {
       getPixelX(barData.mostRightSpot.x, viewSize, holder),
       getPixelY(barData.mostBottomSpot.y, viewSize, holder),
     );
+
     _barPaint
       ..setColorOrGradient(
         barData.color,
