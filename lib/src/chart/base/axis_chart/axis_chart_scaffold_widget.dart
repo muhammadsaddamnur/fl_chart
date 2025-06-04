@@ -2,10 +2,8 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:fl_chart/src/chart/bar_chart/bar_chart_painter.dart';
 import 'package:fl_chart/src/chart/base/axis_chart/side_titles/side_titles_widget.dart';
 import 'package:fl_chart/src/extensions/fl_titles_data_extension.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
 
 /// A scaffold to show an axis-based chart
 ///
@@ -95,7 +93,6 @@ class _AxisChartScaffoldWidgetState extends State<AxisChartScaffoldWidget> {
   double tooltipWidth = 0;
 
   double getPixelX(double spotX, Size viewSize, double maxX, double minX) {
-    // final data = holder.data;
     final deltaX = maxX - minX;
     if (deltaX == 0.0) {
       return 0;
