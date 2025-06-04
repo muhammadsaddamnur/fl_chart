@@ -111,15 +111,6 @@ class LineChartPainter extends AxisChartPainter<LineChartData> {
 
       drawBarLine(canvasWrapper, barData, holder);
 
-      print(
-          'barchartdata length: ${barData.spots.length}, minX: ${barData.mostLeftSpot.x}, maxX: ${barData.mostRightSpot.x}, minY: ${barData.mostBottomSpot.y}, maxY: ${barData.mostTopSpot.y}');
-      print("touchData: ${data.lineTouchData.touchTooltipData}");
-      print(
-          "beetween bars data: ${data.betweenBarsData}, length spot: ${barData.spots.length}");
-
-      print("sell: ${barData.spots[i].isSell}, index: $i");
-
-      // if (barData.spots[i].isSell)
       drawDots(canvasWrapper, barData, holder);
 
       if (data.extraLinesData.extraLinesOnTop) {
@@ -371,35 +362,12 @@ class LineChartPainter extends AxisChartPainter<LineChartData> {
           ..isDrawSell = spot.isSell;
         canvasWrapper.drawDot(painter, spot, Offset(x, y));
 
-        // canvasWrapper = canvasWrapper.copyWith(isDrawSell: spot.isSell);
-        // if (spot.isSell)
         canvasWrapper.drawSellMarker(
           markPainter,
           spot.isSell,
           markerStyle,
           Offset(x, y),
         );
-
-        // for (var i = 0; i < fromSpots.length; i++) {
-        // final spot = fromSpots[i];]x
-        // final x = getPixelX(spot.x, viewSize, holder);
-        // final y = getPixelY(spot.y, viewSize, holder);
-        if (markerStyle.isShowSellMarks && spot.isSell) {
-          // _drawSellMarker(
-          //   canvasWrapper.canvas,
-          //   x,
-          //   y - markerStyle.sellMarkMargin,
-          // );
-          // canvasWrapper.drawSellMarker(x, y, markerStyle);
-        }
-        if (markerStyle.isShowBuyMarks && spot.isBuy) {
-          // _drawBuyMarker(
-          //   canvasWrapper.canvas,
-          //   x,
-          //   y + markerStyle.buyMarkMargin,
-          // );
-        }
-        // }
       }
     }
   }
