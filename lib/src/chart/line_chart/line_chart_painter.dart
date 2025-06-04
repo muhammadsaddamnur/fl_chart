@@ -1,3 +1,5 @@
+// ignore_for_file: prefer_final_locals, omit_local_variable_types, prefer_const_constructors
+
 import 'dart:math';
 
 import 'package:fl_chart/fl_chart.dart';
@@ -108,6 +110,7 @@ class LineChartPainter extends AxisChartPainter<LineChartData> {
       }
 
       drawBarLine(canvasWrapper, barData, holder);
+
       drawDots(canvasWrapper, barData, holder);
 
       if (data.extraLinesData.extraLinesOnTop) {
@@ -140,25 +143,6 @@ class LineChartPainter extends AxisChartPainter<LineChartData> {
       }
       if (!markerStyle.isShowBuyMarks && !markerStyle.isShowSellMarks) {
         continue;
-      }
-      for (var i = 0; i < barData.spots.length; i++) {
-        final spot = barData.spots[i];
-        final x = getPixelX(spot.x, canvasWrapper.size, holder);
-        final y = getPixelY(spot.y, canvasWrapper.size, holder);
-        if (markerStyle.isShowSellMarks) {
-          _drawSellMarker(
-            canvasWrapper.canvas,
-            x,
-            y - markerStyle.sellMarkMargin,
-          );
-        }
-        if (markerStyle.isShowBuyMarks) {
-          _drawBuyMarker(
-            canvasWrapper.canvas,
-            x,
-            y + markerStyle.buyMarkMargin,
-          );
-        }
       }
     }
 
@@ -365,6 +349,7 @@ class LineChartPainter extends AxisChartPainter<LineChartData> {
 
     for (var i = 0; i < barData.spots.length; i++) {
       final spot = barData.spots[i];
+
       if (spot.isNotNull() && barData.dotData.checkToShowDot(spot, barData)) {
         final x = getPixelX(spot.x, viewSize, holder);
         final y = getPixelY(spot.y, viewSize, holder);
@@ -372,7 +357,17 @@ class LineChartPainter extends AxisChartPainter<LineChartData> {
         final painter =
             barData.dotData.getDotPainter(spot, xPercentInLine, barData, i);
 
+        final markPainter = barData.dotData
+            .getMarkPainter(spot, xPercentInLine, barData, i, markerStyle)
+          ..isDrawSell = spot.isSell;
         canvasWrapper.drawDot(painter, spot, Offset(x, y));
+
+        canvasWrapper.drawSellMarker(
+          markPainter,
+          spot.isSell,
+          markerStyle,
+          Offset(x, y),
+        );
       }
     }
   }
@@ -1093,6 +1088,7 @@ class LineChartPainter extends AxisChartPainter<LineChartData> {
       getPixelX(barData.mostRightSpot.x, viewSize, holder),
       getPixelY(barData.mostBottomSpot.y, viewSize, holder),
     );
+
     _barPaint
       ..setColorOrGradient(
         barData.color,

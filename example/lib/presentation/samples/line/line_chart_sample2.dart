@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:fl_chart_app/presentation/resources/app_resources.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
@@ -17,6 +19,28 @@ class _LineChartSample2State extends State<LineChartSample2> {
 
   bool showAvg = false;
 
+  List<FlSpot> spots = [];
+
+  @override
+  void initState() {
+    super.initState();
+    spots = [
+      FlSpot(0, 3, isBuy: true, isSell: true),
+      FlSpot(2.6, 2, isSell: true),
+      FlSpot(4.9, 5, isBuy: true),
+      FlSpot(6.8, 3.1, isSell: true),
+      FlSpot(8, 4, isBuy: true),
+      FlSpot(9.5, 3, isBuy: true, isSell: true),
+      FlSpot(11, 4, isSell: true),
+      FlSpot(11, 6, isSell: true),
+      FlSpot(13, 5, isBuy: true),
+      FlSpot(14.5, 4.5, isSell: true),
+      FlSpot(16, 6, isBuy: true, isSell: true),
+      FlSpot(17.5, 5.5, isSell: true),
+      FlSpot(19, 7, isBuy: true),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -26,16 +50,65 @@ class _LineChartSample2State extends State<LineChartSample2> {
           child: Padding(
             padding: const EdgeInsets.only(
               right: 12,
-              // left: 12,
-              top: 24,
+              left: 12,
+              // top: 24,
               bottom: 12,
             ),
             child: LineChart(
-              showAvg ? avgData() : mainData(),
-              markerStyle: MarkerStyle(
+              mainData(),
+              markerStyle: const MarkerStyle(
                 isShowBuyMarks: true,
                 isShowSellMarks: true,
+                // markerSize: 16,
+                buyMarkMargin: 16,
+                sellMarkMargin: 20,
               ),
+              customTooltip: ((lineBarSpots) {
+                print('ssss $lineBarSpots');
+                if (lineBarSpots == null) {
+                  return Container();
+                }
+
+                if (lineBarSpots.isEmpty) {
+                  return Container();
+                }
+
+                final lineBarSpot = lineBarSpots.first;
+
+                if (true) {
+                  return Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.contentColorBlue,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      'Buy: \$${lineBarSpot.y.toStringAsFixed(2)}',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                      ),
+                    ),
+                  );
+                } else if (lineBarSpot.isSell) {
+                  return Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.contentColorCyan,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      'Sell: \$${lineBarSpot.y.toStringAsFixed(2)}',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                      ),
+                    ),
+                  );
+                }
+
+                return Container();
+              }),
             ),
           ),
         ),
@@ -55,6 +128,45 @@ class _LineChartSample2State extends State<LineChartSample2> {
                 color: showAvg ? Colors.white.withOpacity(0.5) : Colors.white,
               ),
             ),
+          ),
+        ),
+        Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ElevatedButton(
+                  onPressed: () {
+                    var random = Random().nextInt(2);
+
+                    FlSpot spot = FlSpot(spots.last.x + 1, spots.last.x + 1,
+                        isBuy: true, isSell: true);
+                    if (random == 1) {
+                      spot =
+                          FlSpot(spots.last.x, spots.last.y + 1, isSell: true);
+                    } else if (random == 0) {
+                      spot =
+                          FlSpot(spots.last.x, spots.last.y + 1, isBuy: true);
+                    }
+                    spots.add(spot);
+                    setState(() {});
+                  },
+                  child: Text('Add item')),
+              ElevatedButton(
+                  onPressed: () {
+                    spots.clear();
+                    spots.addAll([
+                      FlSpot(0, 3, isBuy: true, isSell: true),
+                      FlSpot(2.6, 2, isSell: true),
+                      FlSpot(4.9, 5, isBuy: true),
+                      FlSpot(6.8, 3.1, isSell: true),
+                      FlSpot(8, 4, isBuy: true),
+                      FlSpot(9.5, 3, isBuy: true, isSell: true),
+                      FlSpot(11, 4, isSell: true),
+                    ]);
+                    setState(() {});
+                  },
+                  child: Text('reset item')),
+            ],
           ),
         ),
       ],
@@ -112,9 +224,16 @@ class _LineChartSample2State extends State<LineChartSample2> {
   }
 
   LineChartData mainData() {
+    double? minX, maxX, minY, maxY;
+    for (var element in spots) {
+      minX = minX == null ? element.x : min(minX, element.x);
+      maxX = maxX == null ? element.x : max(maxX, element.x);
+      minY = minY == null ? element.y : min(minY, element.y);
+      maxY = maxY == null ? element.y : max(maxY, element.y);
+    }
     return LineChartData(
       gridData: FlGridData(
-        show: true,
+        show: false,
         drawVerticalLine: true,
         horizontalInterval: 1,
         verticalInterval: 1,
@@ -132,7 +251,7 @@ class _LineChartSample2State extends State<LineChartSample2> {
         },
       ),
       titlesData: FlTitlesData(
-        show: true,
+        show: false,
         rightTitles: AxisTitles(
           sideTitles: SideTitles(showTitles: false),
         ),
@@ -157,29 +276,21 @@ class _LineChartSample2State extends State<LineChartSample2> {
         ),
       ),
       borderData: FlBorderData(
-        show: true,
+        show: false,
         border: Border.all(color: const Color(0xff37434d)),
       ),
-      minX: 0,
-      maxX: 11,
-      minY: 0,
-      maxY: 6,
+      minX: minX != null ? (minX - 0.5) : null,
+      maxX: maxX != null ? (maxX + 0.5) : null,
+      minY: minY != null ? (minY - 1) : null,
+      maxY: maxY != null ? (maxY + 1) : null,
       lineBarsData: [
         LineChartBarData(
-          spots: const [
-            FlSpot(0, 3),
-            FlSpot(2.6, 2),
-            FlSpot(4.9, 5),
-            FlSpot(6.8, 3.1),
-            FlSpot(8, 4),
-            FlSpot(9.5, 3),
-            FlSpot(11, 4),
-          ],
+          spots: spots,
           isCurved: true,
           gradient: LinearGradient(
             colors: gradientColors,
           ),
-          barWidth: 5,
+          barWidth: 1,
           isStrokeCapRound: true,
           dotData: FlDotData(
             show: false,
@@ -274,7 +385,7 @@ class _LineChartSample2State extends State<LineChartSample2> {
           barWidth: 5,
           isStrokeCapRound: true,
           dotData: FlDotData(
-            show: false,
+            show: true,
           ),
           belowBarData: BarAreaData(
             show: true,

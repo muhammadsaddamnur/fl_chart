@@ -2,10 +2,8 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:fl_chart/src/chart/bar_chart/bar_chart_painter.dart';
 import 'package:fl_chart/src/chart/base/axis_chart/side_titles/side_titles_widget.dart';
 import 'package:fl_chart/src/extensions/fl_titles_data_extension.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
 
 /// A scaffold to show an axis-based chart
 ///
@@ -33,6 +31,7 @@ class AxisChartScaffoldWidget extends StatefulWidget {
     this.lineChartCustomTooltip,
     this.barChartCustomTooltip,
     this.barTooltip,
+    this.markerStyle,
   });
   final Widget chart;
   final AxisChartData data;
@@ -42,6 +41,7 @@ class AxisChartScaffoldWidget extends StatefulWidget {
       lineChartCustomTooltip;
   final Widget Function(BarTooltip? barTooltip)? barChartCustomTooltip;
   final BarTooltip? barTooltip;
+  final MarkerStyle? markerStyle;
 
   @override
   State<AxisChartScaffoldWidget> createState() =>
@@ -91,6 +91,22 @@ class _AxisChartScaffoldWidgetState extends State<AxisChartScaffoldWidget> {
   double backgroundWidth = 0;
   double tooltipHeight = 0;
   double tooltipWidth = 0;
+
+  double getPixelX(double spotX, Size viewSize, double maxX, double minX) {
+    final deltaX = maxX - minX;
+    if (deltaX == 0.0) {
+      return 0;
+    }
+    return ((spotX - minX) / deltaX) * viewSize.width;
+  }
+
+  double getPixelY(double spotY, Size viewSize, double maxY, double minY) {
+    final deltaY = maxY - minY;
+    if (deltaY == 0.0) {
+      return viewSize.height;
+    }
+    return viewSize.height - (((spotY - minY) / deltaY) * viewSize.height);
+  }
 
   List<Widget> stackWidgets(
       BoxConstraints constraints, BuildContext context, bool show) {
@@ -151,7 +167,71 @@ class _AxisChartScaffoldWidgetState extends State<AxisChartScaffoldWidget> {
               ),
             ),
           ),
-        ]
+        ],
+      if ((widget.markerStyle?.isShowBuyMarks ?? false) == false &&
+          (widget.markerStyle?.isShowSellMarks ?? false) == false)
+        ...[]
+      else ...[
+        Stack(
+          children: List.generate(
+            widget.lineChartData?.lineBarsData.first.spots.length ?? 0,
+            (index) {
+              final spot =
+                  widget.lineChartData?.lineBarsData.first.spots[index];
+              if (spot == null || spot.isBuy == false && spot.isSell == false) {
+                return Container();
+              }
+              final x = getPixelX(
+                spot.x,
+                Size(
+                  backgroundWidth - widget.data.titlesData.allSidesPadding.left,
+                  backgroundHeight,
+                ),
+                widget.lineChartData?.maxX ?? 0,
+                widget.lineChartData?.minX ?? 0,
+              );
+
+              final y = getPixelY(
+                spot.y,
+                Size(
+                  backgroundWidth - widget.data.titlesData.allSidesPadding.left,
+                  backgroundHeight -
+                      widget.data.titlesData.allSidesPadding.bottom,
+                ),
+                widget.lineChartData?.maxY ?? 0,
+                widget.lineChartData?.minY ?? 0,
+              );
+
+              return Stack(
+                children: [
+                  // sell
+                  if (spot.isSell &&
+                      (widget.markerStyle?.isShowSellMarks ?? false))
+                    Positioned(
+                      left: x + widget.data.titlesData.allSidesPadding.left,
+                      top: y -
+                          (widget.markerStyle?.sellMarkMargin ?? 8.0) +
+                          (widget.markerStyle?.markerSize ?? 16.0),
+                      child: CustomPaint(
+                        painter: BubbleTailPainterSell(widget.markerStyle),
+                      ),
+                    ),
+                  if (spot.isBuy &&
+                      (widget.markerStyle?.isShowBuyMarks ?? false))
+                    Positioned(
+                      left: x + widget.data.titlesData.allSidesPadding.left,
+                      top: y + (widget.markerStyle?.buyMarkMargin ?? 8.0),
+                      child: CustomPaint(
+                        painter: BubbleTailPainterBuy(widget.markerStyle),
+                      ),
+                    ),
+                  // buy
+                ],
+              );
+            },
+          ),
+        ),
+      ]
     ];
 
     int insertIndex(bool drawBelow) => drawBelow ? 0 : widgets.length;
@@ -274,5 +354,149 @@ class _AxisChartScaffoldWidgetState extends State<AxisChartScaffoldWidget> {
               );
       },
     );
+  }
+}
+
+class BubbleTailPainterSell extends CustomPainter {
+  BubbleTailPainterSell(this.markerStyle);
+  final MarkerStyle? markerStyle;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final sellMarkerPaint = Paint()
+      ..color = markerStyle?.sellMarkColor ?? Colors.red
+      ..style = PaintingStyle.fill;
+
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: 'S',
+        style: markerStyle?.markerSellTextStyle ??
+            const TextStyle(
+              color: Colors.white,
+              fontSize: 16 * 0.7,
+              fontWeight: FontWeight.bold,
+            ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+
+    final offsetInCanvas = Offset(
+      size.width / 2,
+      size.height - (markerStyle?.sellMarkMargin ?? 8),
+    );
+
+    final markerRect = Rect.fromCenter(
+      center: offsetInCanvas,
+      width: markerStyle?.markerSize ?? 16.0,
+      height: markerStyle?.markerSize ?? 16.0,
+    );
+
+    // Draw shadow behind the marker
+
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        markerRect.shift(const Offset(-1, 3)), // Offset the shadow
+        const Radius.circular(4),
+      ),
+      Paint()
+        ..color = Colors.black.withOpacity(0.53) // Shadow color
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4)
+        ..style = PaintingStyle.fill,
+    );
+
+    final trianglePath = Path()
+      ..moveTo(markerRect.center.dx, markerRect.bottom + 4)
+      ..lineTo(markerRect.left, markerRect.bottom - 5)
+      ..lineTo(markerRect.right, markerRect.bottom - 5)
+      ..close();
+
+    canvas
+      ..drawPath(trianglePath, sellMarkerPaint)
+      ..drawRRect(
+        RRect.fromRectAndRadius(markerRect, const Radius.circular(4)),
+        sellMarkerPaint,
+      );
+
+    textPainter.paint(
+      canvas,
+      Offset(
+        markerRect.left + (markerRect.width - textPainter.width) / 2,
+        markerRect.top + (markerRect.height - textPainter.height) / 2,
+      ),
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+    return false;
+  }
+}
+
+class BubbleTailPainterBuy extends CustomPainter {
+  BubbleTailPainterBuy(this.markerStyle);
+  final MarkerStyle? markerStyle;
+  @override
+  void paint(Canvas canvas, Size size) {
+    final buyMarkerPaint = Paint()
+      ..color = markerStyle?.buyMarkColor ?? Colors.green
+      ..style = PaintingStyle.fill;
+
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: 'B',
+        style: markerStyle?.markerBuyTextStyle ??
+            const TextStyle(
+              color: Colors.black,
+              fontSize: 16 * 0.7,
+              fontWeight: FontWeight.bold,
+            ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+
+    final offsetInCanvas = Offset(size.width / 2, size.height - (0 ?? 8));
+
+    // Draw shadow behind the marker
+    final markerRect = Rect.fromCenter(
+      center: offsetInCanvas,
+      width: markerStyle?.markerSize ?? 16,
+      height: markerStyle?.markerSize ?? 16,
+    );
+
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        markerRect.shift(const Offset(-1, 3)), // Offset the shadow
+        const Radius.circular(4),
+      ),
+      Paint()
+        ..color = Colors.black.withOpacity(0.53) // Shadow color
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4)
+        ..style = PaintingStyle.fill,
+    );
+
+    final trianglePath = Path();
+    trianglePath.moveTo(markerRect.center.dx, markerRect.top - 4);
+    trianglePath.lineTo(markerRect.left, markerRect.top + 5);
+    trianglePath.lineTo(markerRect.right, markerRect.top + 5);
+    trianglePath.close();
+    canvas.drawPath(trianglePath, buyMarkerPaint);
+
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(markerRect, Radius.circular(4)),
+      buyMarkerPaint,
+    );
+
+    textPainter.paint(
+      canvas,
+      Offset(
+        markerRect.left + (markerRect.width - textPainter.width) / 2,
+        markerRect.top + (markerRect.height - textPainter.height) / 2,
+      ),
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+    return false;
   }
 }

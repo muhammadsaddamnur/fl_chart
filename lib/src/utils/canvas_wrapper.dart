@@ -12,12 +12,26 @@ typedef DrawCallback = void Function();
 /// We wrapped the canvas here, because we needed to write tests for our drawing system.
 /// Now in tests we can verify that these functions called with a specific value.
 class CanvasWrapper {
-  CanvasWrapper(
-    this.canvas,
-    this.size,
-  );
+  CanvasWrapper(this.canvas, this.size,
+      {this.isDrawSell = false, this.spots = const []});
   final Canvas canvas;
   final Size size;
+  final bool isDrawSell;
+  final List<FlSpot> spots;
+
+  CanvasWrapper copyWith({
+    Canvas? canvas,
+    Size? size,
+    bool? isDrawSell,
+    List<FlSpot>? spots,
+  }) {
+    return CanvasWrapper(
+      canvas ?? this.canvas,
+      size ?? this.size,
+      isDrawSell: isDrawSell ?? this.isDrawSell,
+      spots: spots ?? this.spots,
+    );
+  }
 
   /// Directly calls [Canvas.drawRRect]
   void drawRRect(RRect rrect, Paint paint) => canvas.drawRRect(rrect, paint);
@@ -108,6 +122,16 @@ class CanvasWrapper {
   /// with the [offset]
   void drawDot(FlDotPainter painter, FlSpot spot, Offset offset) {
     painter.draw(canvas, spot, offset);
+  }
+
+  void drawSellMarker(
+    FLMarkerPainter painter,
+    bool spot,
+    MarkerStyle markerStyle,
+    Offset offset,
+  ) {
+    // drawSellMarker(spot.x, spot.y, markerStyle);
+    painter.drawSell(canvas, spot, offset, markerStyle);
   }
 
   /// Handles performing multiple draw actions rotated.

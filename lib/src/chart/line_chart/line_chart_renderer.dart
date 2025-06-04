@@ -115,10 +115,12 @@ class RenderLineChart extends RenderBaseChart<LineTouchResponse> {
       ..save()
       ..translate(offset.dx, offset.dy);
     painter = LineChartPainter(
-        useCustomTooltip: useCustomTooltip, markerStyle: _markerStyle);
+      useCustomTooltip: useCustomTooltip,
+      markerStyle: _markerStyle,
+    );
     painter.paint(
       buildContext,
-      CanvasWrapper(canvas, mockTestSize ?? size),
+      CanvasWrapper(canvas, mockTestSize ?? size, isDrawSell: true),
       paintHolder,
     );
     canvas.restore();

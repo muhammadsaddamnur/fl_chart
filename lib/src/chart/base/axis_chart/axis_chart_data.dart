@@ -461,9 +461,15 @@ class FlSpot with EquatableMixin {
   ///
   /// [y] determines cartesian (axis based) vertically position
   /// 0 means most bottom point of the chart
-  const FlSpot(this.x, this.y);
+  const FlSpot(this.x, this.y, {this.isBuy = false, this.isSell = false});
   final double x;
   final double y;
+
+  /// is buy mark for this line
+  final bool isBuy;
+
+  /// is sell mark for this line
+  final bool isSell;
 
   /// Copies current [FlSpot] to a new [FlSpot],
   /// and replaces provided values.
@@ -479,7 +485,7 @@ class FlSpot with EquatableMixin {
 
   ///Prints x and y coordinates of FlSpot list
   @override
-  String toString() => '($x, $y)';
+  String toString() => '($x, $y, isBuy: $isBuy, isSell: $isSell)';
 
   /// Used for splitting lines, or maybe other concepts.
   static const FlSpot nullSpot = FlSpot(double.nan, double.nan);
@@ -498,6 +504,8 @@ class FlSpot with EquatableMixin {
   List<Object?> get props => [
         x,
         y,
+        isBuy,
+        isSell,
       ];
 
   /// Lerps a [FlSpot] based on [t] value, check [Tween.lerp].

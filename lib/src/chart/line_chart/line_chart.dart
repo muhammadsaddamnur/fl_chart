@@ -72,6 +72,7 @@ class _LineChartState extends AnimatedWidgetBaseState<LineChart> {
       data: showingData,
       lineChartData: _withTouchedIndicators(showingData),
       lineChartCustomTooltip: widget.customTooltip,
+      markerStyle: widget.markerStyle,
     );
   }
 
