@@ -46,7 +46,7 @@ class AvgBuyPill extends StatelessWidget {
         text: TextSpan(
           children: [
             TextSpan(
-              text: '$label  ',
+              text: '$label ',
               style: TextStyle(color: labelC, fontWeight: FontWeight.bold),
             ),
             TextSpan(
@@ -111,14 +111,12 @@ class _LineChartSample2State extends State<LineChartSample2> {
 
   bool showAvg = false;
 
-  // Static "average buy" value. Clamped into the data range [minY, maxY]:
-  // if above the highest spot -> pinned to top, if below the lowest -> bottom.
-  static const double avgY = 4.5;
-  static const String avgLabel = '82,428';
-
-  // High / low Y-axis corner labels (top-right = highest, bottom-right = lowest).
-  static const String highLabel = '96,970';
-  static const String lowLabel = '72,124';
+  // Trade data (external — NOT derived from the chart spots).
+  // The Y axis spans [axisLow, axisHigh]; the pill/line sit at avgBuyValue's
+  // ratio within that range, e.g. 12 in [0,20] -> 60% up the plot.
+  static const double axisHigh = 19; // top-right label
+  static const double axisLow = 0; // bottom-right label
+  static const double avgBuyValue = 1; // "Avg. Buy" from trade data
 
   List<FlSpot> spots = [];
 
@@ -144,13 +142,6 @@ class _LineChartSample2State extends State<LineChartSample2> {
 
   @override
   Widget build(BuildContext context) {
-    // Data extremes, mirrors mainData() so the pill lines up with the dashed line.
-    double? minY, maxY;
-    for (final e in spots) {
-      minY = minY == null ? e.y : min(minY, e.y);
-      maxY = maxY == null ? e.y : max(maxY, e.y);
-    }
-
     return Stack(
       children: <Widget>[
         AspectRatio(
@@ -173,17 +164,19 @@ class _LineChartSample2State extends State<LineChartSample2> {
                 child: _chart(),
               );
 
-              // No data yet -> just the chart.
-              if (minY == null || maxY == null) return chart;
-
               // Exact height of the aspect box (no estimation).
               final boxHeight = constraints.maxHeight;
               // Plot area: top:0 (no top padding), minus bottom padding + titles.
-              final plotHeight = boxHeight - paddingBottom - bottomTitlesReserved;
-              final chartMinY = minY - 1; // matches mainData() minY padding
-              final chartMaxY = maxY + 1; // matches mainData() maxY padding
-              final displayY = avgY.clamp(minY, maxY);
-              final ratio = 1 - (displayY - chartMinY) / (chartMaxY - chartMinY);
+              final plotHeight =
+                  boxHeight - paddingBottom - bottomTitlesReserved;
+
+              // Position from trade data: avg's ratio within [axisLow, axisHigh].
+              // e.g. 12 in [0,20] -> 0.6 -> 60% up the plot. Clamped so a value
+              // above the top pins to the top, below the bottom pins to bottom.
+              final range = axisHigh - axisLow;
+              final valueRatio =
+                  range == 0 ? 0.0 : (avgBuyValue - axisLow) / range;
+              final ratio = 1 - valueRatio.clamp(0.0, 1.0); // Y grows downward
               final lineY = ratio * plotHeight; // plot top = 0 in box coords
 
               final axisLabelColor =
@@ -203,7 +196,7 @@ class _LineChartSample2State extends State<LineChartSample2> {
                   Positioned(
                     top: 0,
                     right: paddingRight,
-                    child: Text(highLabel, style: axisLabelStyle),
+                    child: Text(_fmt(axisHigh), style: axisLabelStyle),
                   ),
                   // Lowest value at the plot's bottom-right (anchored to plot bottom).
                   Positioned(
@@ -211,7 +204,7 @@ class _LineChartSample2State extends State<LineChartSample2> {
                     right: paddingRight,
                     child: FractionalTranslation(
                       translation: const Offset(0, -1),
-                      child: Text(lowLabel, style: axisLabelStyle),
+                      child: Text(_fmt(axisLow), style: axisLabelStyle),
                     ),
                   ),
                   // Dashed line across the plot, centered vertically on lineY.
@@ -233,9 +226,10 @@ class _LineChartSample2State extends State<LineChartSample2> {
                   Positioned(
                     left: paddingLeft,
                     top: lineY,
-                    child: const FractionalTranslation(
-                      translation: Offset(0, -0.5),
-                      child: AvgBuyPill(label: 'Avg. Buy', value: avgLabel),
+                    child: FractionalTranslation(
+                      translation: const Offset(0, -0.5),
+                      child: AvgBuyPill(
+                          label: 'Avg. Buy', value: _fmt(avgBuyValue)),
                     ),
                   ),
                 ],
@@ -302,6 +296,17 @@ class _LineChartSample2State extends State<LineChartSample2> {
         ),
       ],
     );
+  }
+
+  // Formats a value with thousands separators, e.g. 82428 -> "82,428".
+  String _fmt(double v) {
+    final digits = v.round().abs().toString();
+    final buf = StringBuffer(v < 0 ? '-' : '');
+    for (var i = 0; i < digits.length; i++) {
+      if (i > 0 && (digits.length - i) % 3 == 0) buf.write(',');
+      buf.write(digits[i]);
+    }
+    return buf.toString();
   }
 
   Widget _chart() {
