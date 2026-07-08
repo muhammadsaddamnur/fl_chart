@@ -4,6 +4,98 @@ import 'package:fl_chart_app/presentation/resources/app_resources.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
+/// Customizable, theme-aware "Avg. Buy" pill label.
+/// Colors default from the current [Brightness]; every color is overridable.
+class AvgBuyPill extends StatelessWidget {
+  const AvgBuyPill({
+    super.key,
+    required this.label,
+    required this.value,
+    this.backgroundColor,
+    this.borderColor,
+    this.labelColor,
+    this.valueColor,
+    this.borderRadius = 20,
+    this.padding = const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+  });
+
+  final String label;
+  final String value;
+  final Color? backgroundColor;
+  final Color? borderColor;
+  final Color? labelColor;
+  final Color? valueColor;
+  final double borderRadius;
+  final EdgeInsets padding;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bg = backgroundColor ?? (isDark ? Colors.black : Colors.white);
+    final border = borderColor ?? AppColors.contentColorCyan;
+    final labelC = labelColor ?? (isDark ? Colors.white : Colors.black);
+    final valueC = valueColor ?? AppColors.contentColorCyan;
+    return Container(
+      padding: padding,
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(borderRadius),
+        border: Border.all(color: border, width: 1),
+      ),
+      child: RichText(
+        text: TextSpan(
+          children: [
+            TextSpan(
+              text: '$label  ',
+              style: TextStyle(color: labelC, fontWeight: FontWeight.bold),
+            ),
+            TextSpan(
+              text: value,
+              style: TextStyle(color: valueC, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Paints a horizontal dashed line across its width, vertically centered.
+class _DashedLinePainter extends CustomPainter {
+  const _DashedLinePainter({
+    required this.color,
+    this.dashWidth = 8,
+    this.dashGap = 6,
+    this.strokeWidth = 2,
+  });
+
+  final Color color;
+  final double dashWidth;
+  final double dashGap;
+  final double strokeWidth;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+    final y = size.height / 2;
+    double x = 0;
+    while (x < size.width) {
+      canvas.drawLine(Offset(x, y), Offset(x + dashWidth, y), paint);
+      x += dashWidth + dashGap;
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DashedLinePainter old) =>
+      old.color != color ||
+      old.dashWidth != dashWidth ||
+      old.dashGap != dashGap ||
+      old.strokeWidth != strokeWidth;
+}
+
 class LineChartSample2 extends StatefulWidget {
   const LineChartSample2({super.key});
 
@@ -18,6 +110,15 @@ class _LineChartSample2State extends State<LineChartSample2> {
   ];
 
   bool showAvg = false;
+
+  // Static "average buy" value. Clamped into the data range [minY, maxY]:
+  // if above the highest spot -> pinned to top, if below the lowest -> bottom.
+  static const double avgY = 4.5;
+  static const String avgLabel = '82,428';
+
+  // High / low Y-axis corner labels (top-right = highest, bottom-right = lowest).
+  static const String highLabel = '96,970';
+  static const String lowLabel = '72,124';
 
   List<FlSpot> spots = [];
 
@@ -43,73 +144,103 @@ class _LineChartSample2State extends State<LineChartSample2> {
 
   @override
   Widget build(BuildContext context) {
+    // Data extremes, mirrors mainData() so the pill lines up with the dashed line.
+    double? minY, maxY;
+    for (final e in spots) {
+      minY = minY == null ? e.y : min(minY, e.y);
+      maxY = maxY == null ? e.y : max(maxY, e.y);
+    }
+
     return Stack(
       children: <Widget>[
         AspectRatio(
           aspectRatio: 1.70,
-          child: Padding(
-            padding: const EdgeInsets.only(
-              right: 12,
-              left: 12,
-              // top: 24,
-              bottom: 12,
-            ),
-            child: LineChart(
-              mainData(),
-              markerStyle: const MarkerStyle(
-                isShowBuyMarks: true,
-                isShowSellMarks: true,
-                // markerSize: 16,
-                buyMarkMargin: 16,
-                sellMarkMargin: 20,
-              ),
-              customTooltip: ((lineBarSpots) {
-                print('ssss $lineBarSpots');
-                if (lineBarSpots == null) {
-                  return Container();
-                }
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              const paddingLeft = 12.0;
+              const paddingRight = 12.0;
+              const paddingBottom = 12.0;
+              const bottomTitlesReserved = 30.0;
+              const leftTitlesReserved = 42.0;
 
-                if (lineBarSpots.isEmpty) {
-                  return Container();
-                }
+              final chart = Padding(
+                padding: const EdgeInsets.only(
+                  right: 12,
+                  left: paddingLeft,
+                  // top: 24,
+                  bottom: paddingBottom,
+                ),
+                child: _chart(),
+              );
 
-                final lineBarSpot = lineBarSpots.first;
+              // No data yet -> just the chart.
+              if (minY == null || maxY == null) return chart;
 
-                if (true) {
-                  return Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppColors.contentColorBlue,
-                      borderRadius: BorderRadius.circular(8),
+              // Exact height of the aspect box (no estimation).
+              final boxHeight = constraints.maxHeight;
+              // Plot area: top:0 (no top padding), minus bottom padding + titles.
+              final plotHeight = boxHeight - paddingBottom - bottomTitlesReserved;
+              final chartMinY = minY - 1; // matches mainData() minY padding
+              final chartMaxY = maxY + 1; // matches mainData() maxY padding
+              final displayY = avgY.clamp(minY, maxY);
+              final ratio = 1 - (displayY - chartMinY) / (chartMaxY - chartMinY);
+              final lineY = ratio * plotHeight; // plot top = 0 in box coords
+
+              final axisLabelColor =
+                  Theme.of(context).brightness == Brightness.dark
+                      ? Colors.white70
+                      : Colors.black54;
+              final axisLabelStyle = TextStyle(
+                color: axisLabelColor,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              );
+
+              return Stack(
+                children: [
+                  chart,
+                  // Highest value at the plot's top-right.
+                  Positioned(
+                    top: 0,
+                    right: paddingRight,
+                    child: Text(highLabel, style: axisLabelStyle),
+                  ),
+                  // Lowest value at the plot's bottom-right (anchored to plot bottom).
+                  Positioned(
+                    top: plotHeight,
+                    right: paddingRight,
+                    child: FractionalTranslation(
+                      translation: const Offset(0, -1),
+                      child: Text(lowLabel, style: axisLabelStyle),
                     ),
-                    child: Text(
-                      'Buy: \$${lineBarSpot.y.toStringAsFixed(2)}',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
+                  ),
+                  // Dashed line across the plot, centered vertically on lineY.
+                  Positioned(
+                    left: paddingLeft + leftTitlesReserved,
+                    right: paddingRight,
+                    top: lineY - 1,
+                    height: 2,
+                    child: const CustomPaint(
+                      painter: _DashedLinePainter(
+                        color: AppColors.contentColorCyan,
+                        dashWidth: 8,
+                        dashGap: 6,
+                        strokeWidth: 2,
                       ),
                     ),
-                  );
-                } else if (lineBarSpot.isSell) {
-                  return Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppColors.contentColorCyan,
-                      borderRadius: BorderRadius.circular(8),
+                  ),
+                  // Pill, its center sitting on the same lineY.
+                  Positioned(
+                    left: paddingLeft,
+                    top: lineY,
+                    child: const FractionalTranslation(
+                      translation: Offset(0, -0.5),
+                      child: AvgBuyPill(label: 'Avg. Buy', value: avgLabel),
                     ),
-                    child: Text(
-                      'Sell: \$${lineBarSpot.y.toStringAsFixed(2)}',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                      ),
-                    ),
-                  );
-                }
-
-                return Container();
-              }),
-            ),
+                  ),
+                ],
+              );
+            },
           ),
         ),
         SizedBox(
@@ -173,6 +304,65 @@ class _LineChartSample2State extends State<LineChartSample2> {
     );
   }
 
+  Widget _chart() {
+    return LineChart(
+      mainData(),
+      markerStyle: const MarkerStyle(
+        isShowBuyMarks: true,
+        isShowSellMarks: true,
+        // markerSize: 16,
+        buyMarkMargin: 16,
+        sellMarkMargin: 20,
+      ),
+      customTooltip: ((lineBarSpots) {
+        print('ssss $lineBarSpots');
+        if (lineBarSpots == null) {
+          return Container();
+        }
+
+        if (lineBarSpots.isEmpty) {
+          return Container();
+        }
+
+        final lineBarSpot = lineBarSpots.first;
+
+        if (true) {
+          return Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.contentColorBlue,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              'Buy: \$${lineBarSpot.y.toStringAsFixed(2)}',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+              ),
+            ),
+          );
+        } else if (lineBarSpot.isSell) {
+          return Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.contentColorCyan,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              'Sell: \$${lineBarSpot.y.toStringAsFixed(2)}',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+              ),
+            ),
+          );
+        }
+
+        return Container();
+      }),
+    );
+  }
+
   Widget bottomTitleWidgets(double value, TitleMeta meta) {
     const style = TextStyle(
       fontWeight: FontWeight.bold,
@@ -231,6 +421,8 @@ class _LineChartSample2State extends State<LineChartSample2> {
       minY = minY == null ? element.y : min(minY, element.y);
       maxY = maxY == null ? element.y : max(maxY, element.y);
     }
+    // Note: the "Avg. Buy" dashed line is drawn in the build() overlay (not via
+    // extraLinesData) so it shares one Y coordinate with the pill and stays aligned.
     return LineChartData(
       gridData: FlGridData(
         show: false,
