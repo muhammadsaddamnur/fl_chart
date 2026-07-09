@@ -960,6 +960,8 @@ class HorizontalLine extends FlLine with EquatableMixin {
     super.dashArray,
     this.image,
     this.sizedPicture,
+    this.labelWidgetBuilder,
+    this.labelWidgetAlignment = Alignment.centerLeft,
   })  : label = label ?? HorizontalLineLabel(),
         super(
           color: color ?? Colors.black,
@@ -978,6 +980,20 @@ class HorizontalLine extends FlLine with EquatableMixin {
   /// Draws a text label over the line.
   final HorizontalLineLabel label;
 
+  /// Optional builder for a custom label WIDGET drawn over the line.
+  ///
+  /// Unlike [label] (canvas-painted text), this lets consumers render any
+  /// Flutter widget (e.g. a styled pill/badge). It is positioned by the chart
+  /// itself so its vertical center sits exactly on the line at [y], using the
+  /// real axis transform — no manual pixel math needed. Its horizontal anchor
+  /// within the plot is controlled by [labelWidgetAlignment].
+  final Widget Function(HorizontalLine line)? labelWidgetBuilder;
+
+  /// Horizontal anchor of [labelWidgetBuilder] within the plot area.
+  /// Only the horizontal component is used; the widget is always centered
+  /// vertically on the line. Defaults to [Alignment.centerLeft].
+  final Alignment labelWidgetAlignment;
+
   /// Lerps a [HorizontalLine] based on [t] value, check [Tween.lerp].
   static HorizontalLine lerp(HorizontalLine a, HorizontalLine b, double t) {
     return HorizontalLine(
@@ -988,6 +1004,8 @@ class HorizontalLine extends FlLine with EquatableMixin {
       dashArray: lerpIntList(a.dashArray, b.dashArray, t),
       image: b.image,
       sizedPicture: b.sizedPicture,
+      labelWidgetBuilder: b.labelWidgetBuilder,
+      labelWidgetAlignment: b.labelWidgetAlignment,
     );
   }
 
@@ -1001,6 +1019,8 @@ class HorizontalLine extends FlLine with EquatableMixin {
         dashArray,
         image,
         sizedPicture,
+        labelWidgetBuilder,
+        labelWidgetAlignment,
       ];
 }
 

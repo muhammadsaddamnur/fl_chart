@@ -234,6 +234,44 @@ class _AxisChartScaffoldWidgetState extends State<AxisChartScaffoldWidget> {
       ]
     ];
 
+    // Custom WIDGET labels for horizontal extra-lines (e.g. a styled pill).
+    // Positioned by the chart's own value->pixel transform so each widget's
+    // vertical center sits exactly on its line at [HorizontalLine.y].
+    final horizontalLines =
+        widget.lineChartData?.extraLinesData.horizontalLines ?? [];
+    for (final line in horizontalLines) {
+      final builder = line.labelWidgetBuilder;
+      if (builder == null) {
+        continue;
+      }
+      final padding = widget.data.titlesData.allSidesPadding;
+      final plotHeight = backgroundHeight - padding.bottom;
+      final lineY = getPixelY(
+        line.y,
+        Size(backgroundWidth - padding.left, plotHeight),
+        widget.lineChartData?.maxY ?? 0,
+        widget.lineChartData?.minY ?? 0,
+      );
+      final plotWidth = backgroundWidth - padding.left - padding.right;
+      // Center the label ON the line (its vertical center sits exactly at the
+      // line). The enclosing Stack uses Clip.none so the label is never cut when
+      // the line is near an edge -- the overhang draws into the surrounding area.
+      widgets.add(
+        Positioned(
+          left: padding.left,
+          top: padding.top + lineY,
+          width: plotWidth < 0 ? 0 : plotWidth,
+          child: Align(
+            alignment: Alignment(line.labelWidgetAlignment.x, 0),
+            child: FractionalTranslation(
+              translation: const Offset(0, -0.5),
+              child: builder(line),
+            ),
+          ),
+        ),
+      );
+    }
+
     int insertIndex(bool drawBelow) => drawBelow ? 0 : widgets.length;
 
     if (showLeftTitles) {
@@ -339,7 +377,10 @@ class _AxisChartScaffoldWidgetState extends State<AxisChartScaffoldWidget> {
         backgroundHeight = constraints.maxHeight;
         return widget.lineChartCustomTooltip == null &&
                 widget.barChartCustomTooltip == null
-            ? Stack(children: stackWidgets(constraints, context, show))
+            ? Stack(
+                clipBehavior: Clip.none,
+                children: stackWidgets(constraints, context, show),
+              )
             : Listener(
                 onPointerHover: onPointerHover,
                 onPointerMove: onPointerMove,
@@ -349,8 +390,10 @@ class _AxisChartScaffoldWidgetState extends State<AxisChartScaffoldWidget> {
                     show = !show;
                   });
                 },
-                child:
-                    Stack(children: stackWidgets(constraints, context, show)),
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: stackWidgets(constraints, context, show),
+                ),
               );
       },
     );

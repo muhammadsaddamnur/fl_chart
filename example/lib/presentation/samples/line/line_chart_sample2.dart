@@ -60,42 +60,6 @@ class AvgBuyPill extends StatelessWidget {
   }
 }
 
-/// Paints a horizontal dashed line across its width, vertically centered.
-class _DashedLinePainter extends CustomPainter {
-  const _DashedLinePainter({
-    required this.color,
-    this.dashWidth = 8,
-    this.dashGap = 6,
-    this.strokeWidth = 2,
-  });
-
-  final Color color;
-  final double dashWidth;
-  final double dashGap;
-  final double strokeWidth;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.round;
-    final y = size.height / 2;
-    double x = 0;
-    while (x < size.width) {
-      canvas.drawLine(Offset(x, y), Offset(x + dashWidth, y), paint);
-      x += dashWidth + dashGap;
-    }
-  }
-
-  @override
-  bool shouldRepaint(_DashedLinePainter old) =>
-      old.color != color ||
-      old.dashWidth != dashWidth ||
-      old.dashGap != dashGap ||
-      old.strokeWidth != strokeWidth;
-}
-
 class LineChartSample2 extends StatefulWidget {
   const LineChartSample2({super.key});
 
@@ -142,54 +106,48 @@ class _LineChartSample2State extends State<LineChartSample2> {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: <Widget>[
-        AspectRatio(
-          aspectRatio: 1.70,
-          child: LayoutBuilder(
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Stack(
+            clipBehavior: Clip.none,
+            children: <Widget>[
+              AspectRatio(
+                aspectRatio: 1.70,
+                child: LayoutBuilder(
             builder: (context, constraints) {
-              const paddingLeft = 12.0;
               const paddingRight = 12.0;
               const paddingBottom = 12.0;
               const bottomTitlesReserved = 30.0;
-              const leftTitlesReserved = 42.0;
 
               final chart = Padding(
                 padding: const EdgeInsets.only(
                   right: 12,
-                  left: paddingLeft,
+                  left: 12,
                   // top: 24,
                   bottom: paddingBottom,
                 ),
+                // The Avg. Buy dashed line + pill are now drawn by the library
+                // (see mainData -> extraLinesData.horizontalLines with a
+                // labelWidgetBuilder). No manual overlay/positioning needed.
                 child: _chart(),
               );
 
-              // Exact height of the aspect box (no estimation).
-              final boxHeight = constraints.maxHeight;
-              // Plot area: top:0 (no top padding), minus bottom padding + titles.
+              // Corner labels only need the plot's top/bottom edges (not any
+              // value), so this bit of geometry is trivial and robust.
               final plotHeight =
-                  boxHeight - paddingBottom - bottomTitlesReserved;
-
-              // Position from trade data: avg's ratio within [axisLow, axisHigh].
-              // e.g. 12 in [0,20] -> 0.6 -> 60% up the plot. Clamped so a value
-              // above the top pins to the top, below the bottom pins to bottom.
-              final range = axisHigh - axisLow;
-              final valueRatio =
-                  range == 0 ? 0.0 : (avgBuyValue - axisLow) / range;
-              final ratio = 1 - valueRatio.clamp(0.0, 1.0); // Y grows downward
-              final lineY = ratio * plotHeight; // plot top = 0 in box coords
-
-              final axisLabelColor =
-                  Theme.of(context).brightness == Brightness.dark
-                      ? Colors.white70
-                      : Colors.black54;
+                  constraints.maxHeight - paddingBottom - bottomTitlesReserved;
               final axisLabelStyle = TextStyle(
-                color: axisLabelColor,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.white70
+                    : Colors.black54,
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
               );
 
               return Stack(
+                clipBehavior: Clip.none,
                 children: [
                   chart,
                   // Highest value at the plot's top-right.
@@ -207,57 +165,41 @@ class _LineChartSample2State extends State<LineChartSample2> {
                       child: Text(_fmt(axisLow), style: axisLabelStyle),
                     ),
                   ),
-                  // Dashed line across the plot, centered vertically on lineY.
-                  Positioned(
-                    left: paddingLeft + leftTitlesReserved,
-                    right: paddingRight,
-                    top: lineY - 1,
-                    height: 2,
-                    child: const CustomPaint(
-                      painter: _DashedLinePainter(
-                        color: AppColors.contentColorCyan,
-                        dashWidth: 8,
-                        dashGap: 6,
-                        strokeWidth: 2,
-                      ),
-                    ),
-                  ),
-                  // Pill, its center sitting on the same lineY.
-                  Positioned(
-                    left: paddingLeft,
-                    top: lineY,
-                    child: FractionalTranslation(
-                      translation: const Offset(0, -0.5),
-                      child: AvgBuyPill(
-                          label: 'Avg. Buy', value: _fmt(avgBuyValue)),
-                    ),
-                  ),
                 ],
               );
             },
           ),
         ),
-        SizedBox(
-          width: 60,
-          height: 34,
-          child: TextButton(
-            onPressed: () {
-              setState(() {
-                showAvg = !showAvg;
-              });
-            },
-            child: Text(
-              'avg',
-              style: TextStyle(
-                fontSize: 12,
-                color: showAvg ? Colors.white.withOpacity(0.5) : Colors.white,
+              // 'avg' toggle overlay, top-left of the chart.
+              Positioned(
+                left: 0,
+                top: 0,
+                child: SizedBox(
+                  width: 60,
+                  height: 34,
+                  child: TextButton(
+                    onPressed: () {
+                      setState(() {
+                        showAvg = !showAvg;
+                      });
+                    },
+                    child: Text(
+                      'avg',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: showAvg
+                            ? Colors.white.withOpacity(0.5)
+                            : Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
-        ),
-        Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+          const SizedBox(height: 32),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               ElevatedButton(
                   onPressed: () {
@@ -276,6 +218,7 @@ class _LineChartSample2State extends State<LineChartSample2> {
                     setState(() {});
                   },
                   child: Text('Add item')),
+              const SizedBox(width: 12),
               ElevatedButton(
                   onPressed: () {
                     spots.clear();
@@ -293,8 +236,8 @@ class _LineChartSample2State extends State<LineChartSample2> {
                   child: Text('reset item')),
             ],
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -426,9 +369,34 @@ class _LineChartSample2State extends State<LineChartSample2> {
       minY = minY == null ? element.y : min(minY, element.y);
       maxY = maxY == null ? element.y : max(maxY, element.y);
     }
-    // Note: the "Avg. Buy" dashed line is drawn in the build() overlay (not via
-    // extraLinesData) so it shares one Y coordinate with the pill and stays aligned.
+    // Chart Y domain (padded, same as minY/maxY below).
+    final chartMinY = (minY ?? 0) - 1;
+    final chartMaxY = (maxY ?? 0) + 1;
+    // Map the external trade value onto the chart's Y domain, so the library
+    // places the line at avgBuyValue's ratio within [axisLow, axisHigh].
+    final valueRatio = ((avgBuyValue - axisLow) / (axisHigh - axisLow))
+        .clamp(0.0, 1.0)
+        .toDouble();
+    final avgChartY = chartMinY + valueRatio * (chartMaxY - chartMinY);
+
     return LineChartData(
+      // Avg. Buy dashed line + pill are a LIBRARY feature now: the line is drawn
+      // by fl_chart and the pill widget is positioned on it by the chart's own
+      // axis transform (labelWidgetBuilder) -> exact alignment, zero manual math.
+      extraLinesData: ExtraLinesData(
+        horizontalLines: [
+          HorizontalLine(
+            y: avgChartY,
+            color: AppColors.contentColorCyan,
+            strokeWidth: 2,
+            dashArray: const [8, 6],
+            labelWidgetBuilder: (line) => AvgBuyPill(
+              label: 'Avg. Buy',
+              value: _fmt(avgBuyValue),
+            ),
+          ),
+        ],
+      ),
       gridData: FlGridData(
         show: false,
         drawVerticalLine: true,

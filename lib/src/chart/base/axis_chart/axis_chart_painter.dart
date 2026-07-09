@@ -211,14 +211,24 @@ abstract class AxisChartPainter<D extends AxisChartData>
     Size viewSize,
   ) {
     for (final line in holder.data.extraLinesData.horizontalLines) {
-      final from = Offset(0, getPixelY(line.y, viewSize, holder));
-      final to = Offset(viewSize.width, getPixelY(line.y, viewSize, holder));
+      // Skip only if the line's value falls outside the plotted Y range.
+      // (Lines exactly at minY/maxY are kept — see clamp below — so a line at
+      // the very top or bottom edge is still drawn instead of vanishing.)
+      if (line.y < holder.data.minY || line.y > holder.data.maxY) {
+        continue;
+      }
 
-      final isLineBeingDrawnOutsideChart = from.dy <= 0 || to.dy <= 0;
-      final isLineBeingDrawnOnXAxis =
-          from.dy == viewSize.height || to.dy == viewSize.height;
+      // Clamp the pixel Y by half the stroke so an edge line stays fully
+      // visible (a line exactly at the top/bottom would otherwise be half
+      // outside the plot and get clipped away).
+      final halfStroke = line.strokeWidth / 2;
+      final lineY = getPixelY(line.y, viewSize, holder)
+          .clamp(halfStroke, viewSize.height - halfStroke)
+          .toDouble();
+      final from = Offset(0, lineY);
+      final to = Offset(viewSize.width, lineY);
 
-      if (!(isLineBeingDrawnOutsideChart || isLineBeingDrawnOnXAxis)) {
+      {
         _extraLinesPaint
           ..color = line.color
           ..strokeWidth = line.strokeWidth
