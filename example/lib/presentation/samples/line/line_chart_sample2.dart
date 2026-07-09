@@ -115,61 +115,19 @@ class _LineChartSample2State extends State<LineChartSample2> {
             children: <Widget>[
               AspectRatio(
                 aspectRatio: 1.70,
-                child: LayoutBuilder(
-            builder: (context, constraints) {
-              const paddingRight = 12.0;
-              const paddingBottom = 12.0;
-              const bottomTitlesReserved = 30.0;
-
-              final chart = Padding(
-                padding: const EdgeInsets.only(
-                  right: 12,
-                  left: 12,
-                  // top: 24,
-                  bottom: paddingBottom,
+                child: Padding(
+                  padding: const EdgeInsets.only(
+                    right: 12,
+                    left: 12,
+                    // top: 24,
+                    bottom: 12,
+                  ),
+                  // Avg. Buy dashed line + pill AND the high/low axis labels are
+                  // all drawn by the library now (see mainData: extraLinesData +
+                  // rightTitles). No manual overlay/positioning.
+                  child: _chart(),
                 ),
-                // The Avg. Buy dashed line + pill are now drawn by the library
-                // (see mainData -> extraLinesData.horizontalLines with a
-                // labelWidgetBuilder). No manual overlay/positioning needed.
-                child: _chart(),
-              );
-
-              // Corner labels only need the plot's top/bottom edges (not any
-              // value), so this bit of geometry is trivial and robust.
-              final plotHeight =
-                  constraints.maxHeight - paddingBottom - bottomTitlesReserved;
-              final axisLabelStyle = TextStyle(
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? Colors.white70
-                    : Colors.black54,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              );
-
-              return Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  chart,
-                  // Highest value at the plot's top-right.
-                  Positioned(
-                    top: 0,
-                    right: paddingRight,
-                    child: Text(_fmt(axisHigh), style: axisLabelStyle),
-                  ),
-                  // Lowest value at the plot's bottom-right (anchored to plot bottom).
-                  Positioned(
-                    top: plotHeight,
-                    right: paddingRight,
-                    child: FractionalTranslation(
-                      translation: const Offset(0, -1),
-                      child: Text(_fmt(axisLow), style: axisLabelStyle),
-                    ),
-                  ),
-                ],
-              );
-            },
-          ),
-        ),
+              ),
               // 'avg' toggle overlay, top-left of the chart.
               Positioned(
                 left: 0,
@@ -203,16 +161,16 @@ class _LineChartSample2State extends State<LineChartSample2> {
             children: [
               ElevatedButton(
                   onPressed: () {
-                    var random = Random().nextInt(2);
+                    var random = Random().nextInt(3);
 
                     FlSpot spot = FlSpot(spots.last.x + 1, spots.last.x + 1,
                         isBuy: true, isSell: true);
                     if (random == 1) {
-                      spot =
-                          FlSpot(spots.last.x, spots.last.y + 1, isSell: true);
-                    } else if (random == 0) {
-                      spot =
-                          FlSpot(spots.last.x, spots.last.y + 1, isBuy: true);
+                      spot = FlSpot(spots.last.x + 1, spots.last.y - 1,
+                          isSell: true);
+                    } else if (random == 2) {
+                      spot = FlSpot(spots.last.x + 1, spots.last.y + 1,
+                          isBuy: true);
                     }
                     spots.add(spot);
                     setState(() {});
@@ -361,6 +319,28 @@ class _LineChartSample2State extends State<LineChartSample2> {
     return Text(text, style: style, textAlign: TextAlign.left);
   }
 
+  // Built-in right-axis labels: show the trade high at the top tick (maxY) and
+  // the trade low at the bottom tick (minY). fl_chart handles positioning.
+  Widget rightTitleWidgets(double value, TitleMeta meta) {
+    const style = TextStyle(
+      color: Colors.white70,
+      fontSize: 14,
+      fontWeight: FontWeight.w600,
+    );
+    String text;
+    if ((value - meta.max).abs() < 0.001) {
+      text = _fmt(axisHigh);
+    } else if ((value - meta.min).abs() < 0.001) {
+      text = _fmt(axisLow);
+    } else {
+      return const SizedBox.shrink();
+    }
+    return SideTitleWidget(
+      axisSide: meta.axisSide,
+      child: Text(text, style: style),
+    );
+  }
+
   LineChartData mainData() {
     double? minX, maxX, minY, maxY;
     for (var element in spots) {
@@ -416,28 +396,26 @@ class _LineChartSample2State extends State<LineChartSample2> {
         },
       ),
       titlesData: FlTitlesData(
-        show: false,
+        show: true,
+        // High/low labels via the built-in right axis: fl_chart positions them
+        // at the top (maxY) and bottom (minY) ticks. interval == full range so
+        // only those two ticks appear.
         rightTitles: AxisTitles(
-          sideTitles: SideTitles(showTitles: false),
+          sideTitles: SideTitles(
+            showTitles: true,
+            reservedSize: 48,
+            interval: (chartMaxY - chartMinY) <= 0 ? 1 : (chartMaxY - chartMinY),
+            getTitlesWidget: rightTitleWidgets,
+          ),
         ),
         topTitles: AxisTitles(
           sideTitles: SideTitles(showTitles: false),
         ),
         bottomTitles: AxisTitles(
-          sideTitles: SideTitles(
-            showTitles: true,
-            reservedSize: 30,
-            interval: 1,
-            getTitlesWidget: bottomTitleWidgets,
-          ),
+          sideTitles: SideTitles(showTitles: false),
         ),
         leftTitles: AxisTitles(
-          sideTitles: SideTitles(
-            showTitles: true,
-            interval: 1,
-            getTitlesWidget: leftTitleWidgets,
-            reservedSize: 42,
-          ),
+          sideTitles: SideTitles(showTitles: false),
         ),
       ),
       borderData: FlBorderData(
