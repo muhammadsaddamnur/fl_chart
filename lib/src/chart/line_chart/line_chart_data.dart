@@ -901,12 +901,7 @@ class FLMarkerPainterImpl extends FLMarkerPainter {
     Offset offsetInCanvas,
     MarkerStyle markerStyle,
   ) {
-    // if (!spot) return;
-    print('spot $spot');
-    canvas.save();
     if (!isDrawSell) return;
-    // var random = Random().nextInt(2);
-    // if (random == 0) return;
 
     final sellMarkerPaint = Paint()
       ..color = markerStyle.sellMarkColor
